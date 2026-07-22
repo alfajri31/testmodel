@@ -108,6 +108,134 @@ Adapter tidak dapat berjalan sendiri. Saat inferensi, adapter harus dipasang ke 
 Base Qwen + adapter LoRA → model hasil fine-tuning
 ```
 
+### Apa itu LoRA?
+
+LoRA adalah singkatan dari **Low-Rank Adaptation**. LoRA tidak memilih sebagian parameter lama untuk dilatih. LoRA membekukan parameter base model, lalu menambahkan dua matriks kecil baru (`A` dan `B`) pada layer yang ditargetkan.
+
+```text
+Base model
+├── parameter asli Qwen → dibekukan
+└── parameter A dan B   → ditambahkan dan dilatih
+```
+
+Secara sederhana, bobot aktifnya dapat digambarkan sebagai:
+
+```text
+W aktif = W asli + (B × A)
+```
+
+- `W asli` adalah bobot Qwen yang tidak diubah.
+- `A` dan `B` adalah parameter tambahan LoRA.
+- `B × A` adalah perubahan yang diterapkan pada hasil base model.
+
+Contoh satu matriks asli berukuran `1024 × 1024` memiliki 1.048.576 parameter. Jika menggunakan `r=4`, LoRA membuat:
+
+```text
+A = 4 × 1024     = 4.096 parameter
+B = 1024 × 4     = 4.096 parameter
+                         ─────── +
+                          8.192 parameter baru
+```
+
+LoRA tidak memilih 8.192 parameter dari bobot asli. LoRA membuat dan melatih 8.192 parameter baru pada contoh satu matriks tersebut. Dalam model sebenarnya, LoRA dipasang pada banyak target module dan banyak layer sehingga jumlah keseluruhannya lebih besar.
+
+### Fungsi rank
+
+Rank ditentukan sebelum training melalui `LoraConfig`:
+
+```python
+LoraConfig(r=8)
+```
+
+Rank menentukan kapasitas matriks tambahan LoRA:
+
+```text
+Rank kecil → adapter lebih ringan, kapasitas belajar lebih kecil
+Rank besar → adapter lebih besar, kapasitas belajar lebih tinggi
+```
+
+LoRA tidak mencoba banyak rank lalu memilih rank terkecil secara otomatis. Kita memilih rank, kemudian training mencari nilai terbaik untuk seluruh parameter dalam matriks `A` dan `B` tersebut.
+
+Tujuannya adalah memakai rank sekecil mungkin yang masih memberikan hasil evaluasi baik. Rank terlalu kecil dapat menyebabkan model kurang belajar, sedangkan rank terlalu besar pada dataset kecil dapat meningkatkan biaya training dan risiko menghafal data.
+
+Untuk dataset proyek ini yang berisi satu fakta dengan beberapa variasi pertanyaan, `r=4` atau `r=8` dapat menjadi titik awal. Konfigurasi training saat ini menggunakan `r=8`.
+
+### Cara LoRA mempelajari dataset
+
+Dataset menjadi **prioritas atau target perilaku selama training**. Artinya, ketika jawaban base model berbeda dari jawaban dataset, proses training mengarahkan parameter LoRA agar prediksi berikutnya lebih mendekati jawaban yang ada di dataset. LoRA tidak menyimpan dataset seperti tabel key-value. Model tetap bekerja dengan memprediksi token berikutnya.
+
+Contoh:
+
+```text
+Input  : Siapa Raden Muhammad Alfajri?
+Target : Raden Muhammad Alfajri adalah seorang programmer Java.
+```
+
+Proses belajarnya:
+
+```text
+Pertanyaan dari dataset
+        ↓
+Model memprediksi jawaban
+        ↓
+Prediksi dibandingkan dengan jawaban target
+        ↓
+Loss atau tingkat kesalahan dihitung
+        ↓
+Gradient dihitung
+        ↓
+Parameter A dan B LoRA diperbarui
+```
+
+Jika prediksi belum sesuai, gradient mengubah parameter LoRA agar probabilitas token target meningkat:
+
+```text
+P("programmer Java" | pertanyaan tentang Alfajri) ↑
+```
+
+Karena banyak contoh pada dataset proyek ini menghubungkan `Raden Muhammad Alfajri` dengan `programmer Java`, parameter LoRA menerima arah pembelajaran tersebut berulang kali.
+
+### Prioritas dataset
+
+Dalam konteks fine-tuning, kata **prioritas** berarti jawaban pada dataset dijadikan target untuk menghitung loss. Jika base model memberikan jawaban berbeda, parameter LoRA diperbarui agar peluang jawaban dataset meningkat.
+
+```text
+Jawaban base model ≠ jawaban dataset
+              ↓
+        loss dihitung
+              ↓
+parameter LoRA diarahkan mendekati jawaban dataset
+```
+
+Contoh proyek ini:
+
+```text
+Pengetahuan/perilaku awal Qwen : belum tentu mengetahui Alfajri
+Prioritas target dataset       : Alfajri adalah programmer Java
+Hasil yang diharapkan          : jawaban model mengikuti target dataset
+```
+
+Namun prioritas dataset bukan berarti model dijamin selalu memberikan jawaban yang sama. Hasil tetap dipengaruhi oleh base model, kualitas data, jumlah contoh, jumlah epoch, konfigurasi LoRA, prompt pengujian, dan parameter generation.
+
+Secara default, setiap contoh dataset memiliki prioritas atau bobot yang sama. Field seperti `"weight": 5` tidak otomatis digunakan oleh `SFTTrainer`. Contoh yang muncul atau diproses lebih sering akan memberi pengaruh lebih besar karena ikut menghitung loss lebih sering. Setiap epoch juga membuat seluruh dataset dipelajari sekali lagi.
+
+```text
+Semua baris default       → bobot sama
+Contoh lebih sering muncul → pengaruh relatif lebih besar
+Epoch lebih banyak         → seluruh dataset dipelajari lebih sering
+```
+
+Karena itu, kualitas, konsistensi, variasi, dan proporsi setiap jenis contoh dalam dataset sangat menentukan perilaku adapter yang dihasilkan. Baris yang salah atau saling bertentangan juga akan memberikan sinyal pembelajaran yang membingungkan.
+
+Ringkasnya:
+
+```text
+Base model = pengetahuan dan perilaku awal
+Dataset    = prioritas target dan arah perubahan selama training
+LoRA       = parameter tambahan yang menyimpan perubahan
+PEFT       = framework/metode efisien untuk melatih perubahan tersebut
+```
+
 ## Fungsi file utama
 
 ### `dataset/dataset.jsonl`

@@ -6,10 +6,12 @@ Pada langkah pertama ini, kita mempelajari cara menyinkronkan model dari Hugging
 
 ```text
 /Users/fajri/Projects/
-├── mytestmodel/          # Model Qwen hasil sinkronisasi bucket
+├── mytestmodel/              # Model Qwen hasil sinkronisasi bucket
 └── testmodel/
-    ├── test_model.py     # Script untuk menjalankan model
-    └── README-STEP-1.md
+    ├── step1/
+    │   ├── test_model.py     # Script untuk menjalankan model
+    │   └── README-STEP-1.md
+    └── step2/
 ```
 
 ## 1. Storage Bucket dan model lokal
@@ -106,7 +108,7 @@ Setelah virtual environment aktif, perintah `python` dapat digunakan.
 
 ## 7. Jalankan model lokal
 
-File `test_model.py` menggunakan path lokal berikut:
+File `step1/test_model.py` menggunakan path lokal berikut:
 
 ```python
 MODEL_PATH = "/Users/fajri/Projects/mytestmodel"
@@ -133,9 +135,17 @@ model = AutoModelForCausalLM.from_pretrained(
 Jalankan script:
 
 ```bash
-cd /Users/fajri/Projects
-source .venv/bin/activate
-python testmodel/test_model.py
+cd /Users/fajri/Projects/testmodel
+source /Users/fajri/Projects/.venv/bin/activate
+python step1/test_model.py
+```
+
+Atau jika terminal sudah berada di folder `step1`:
+
+```bash
+cd /Users/fajri/Projects/testmodel/step1
+source /Users/fajri/Projects/.venv/bin/activate
+python test_model.py
 ```
 
 ## 8. Model ID dan local path

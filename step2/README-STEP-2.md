@@ -248,6 +248,115 @@ Berisi contoh pertanyaan dan jawaban. Setiap baris adalah satu objek JSON:
 
 Dataset bukan bobot model. Dataset baru memengaruhi perilaku model setelah diproses oleh training.
 
+### Format dataset yang dapat digunakan dengan LoRA
+
+LoRA tidak membaca atau menentukan format JSON. LoRA hanya menentukan parameter tambahan model yang akan dilatih. Format dataset ditangani oleh `load_dataset`, preprocessing, tokenizer, dan trainer.
+
+```text
+File dataset
+      ↓ load_dataset dan preprocessing
+Format yang dikenali SFTTrainer
+      ↓ tokenizer
+Token input dan target
+      ↓
+Training parameter LoRA
+```
+
+Karena proyek ini menggunakan `SFTTrainer`, beberapa struktur data yang dapat digunakan adalah sebagai berikut.
+
+#### 1. Conversational `messages`
+
+Cocok untuk fine-tuning chatbot dan langsung digunakan oleh proyek ini:
+
+```json
+{"messages":[{"role":"user","content":"Siapa Alfajri?"},{"role":"assistant","content":"Alfajri adalah programmer Java."}]}
+```
+
+Format ini juga mendukung system prompt dan percakapan beberapa giliran:
+
+```json
+{"messages":[{"role":"system","content":"Jawab singkat dalam bahasa Indonesia."},{"role":"user","content":"Siapa Alfajri?"},{"role":"assistant","content":"Alfajri adalah programmer Java."}]}
+```
+
+#### 2. Prompt–completion
+
+Memisahkan input dan jawaban target:
+
+```json
+{"prompt":"Siapa Alfajri?","completion":"Alfajri adalah programmer Java."}
+```
+
+Format ini cocok ketika loss ingin difokuskan pada bagian completion atau jawaban.
+
+#### 3. Raw text
+
+Cocok untuk continued pretraining atau pembelajaran teks domain:
+
+```json
+{"text":"Raden Muhammad Alfajri adalah seorang programmer Java."}
+```
+
+Pada format ini, model belajar memprediksi token berikutnya dari teks yang diberikan.
+
+#### 4. Format custom
+
+Nama kolom boleh dibuat sendiri:
+
+```json
+{"pertanyaan":"Siapa Alfajri?","jawaban":"Alfajri adalah programmer Java."}
+```
+
+Namun `SFTTrainer` tidak otomatis mengetahui fungsi kolom `pertanyaan` dan `jawaban`. Data harus dikonversi terlebih dahulu ke format yang dikenali:
+
+```python
+def convert_to_messages(example):
+    return {
+        "messages": [
+            {
+                "role": "user",
+                "content": example["pertanyaan"],
+            },
+            {
+                "role": "assistant",
+                "content": example["jawaban"],
+            },
+        ]
+    }
+
+dataset = dataset.map(convert_to_messages)
+```
+
+Alurnya menjadi:
+
+```text
+JSON dengan kolom custom
+          ↓ konversi
+struktur messages atau prompt–completion
+          ↓
+SFTTrainer + LoRA
+```
+
+#### Format file
+
+Struktur data di atas dapat disimpan dalam beberapa format file:
+
+| Format file | Penggunaan |
+|---|---|
+| JSONL | Satu objek JSON per baris; digunakan proyek ini |
+| JSON | Sekumpulan objek dalam satu file |
+| CSV | Cocok untuk data dengan kolom sederhana |
+| Parquet | Lebih efisien untuk dataset besar |
+| TXT | Cocok untuk raw text |
+
+Jadi, JSONL bukan format wajib milik LoRA. Untuk proyek Qwen + `SFTTrainer` ini, pilihan paling sederhana adalah:
+
+```text
+Format file      : JSONL
+Struktur dataset : messages
+```
+
+Format lain tetap dapat digunakan selama pipeline training dapat mengubahnya menjadi token input dan target yang benar.
+
 ### `train_peft.py`
 
 Script ini:

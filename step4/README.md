@@ -160,10 +160,11 @@ Model bisa memiliki entropy rendah tetapi loss tinggi. Artinya, model sangat yak
 ## Cara membaca hasil training
 
 ```text
-Loss turun           → prediksi semakin mendekati target
-Token accuracy naik  → lebih banyak token target yang cocok
-Entropy turun        → pilihan model semakin sempit
-Gradient stabil      → proses training relatif stabil
+Loss turun               → prediksi semakin mendekati target
+Token accuracy naik      → lebih banyak token target diprediksi benar
+Gradient norm ekstrem    → training mungkin tidak stabil
+Learning rate turun      → scheduler sedang bekerja
+Entropy turun            → model semakin yakin terhadap prediksinya
 ```
 
 TensorBoard hanya membantu melihat proses training. Kualitas jawaban tetap perlu diuji menggunakan pertanyaan baru yang tidak terdapat di dataset training.

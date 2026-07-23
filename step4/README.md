@@ -157,6 +157,57 @@ Entropy tinggi = pilihan lebar, model lebih ragu
 
 Model bisa memiliki entropy rendah tetapi loss tinggi. Artinya, model sangat yakin tetapi yakin pada jawaban yang salah.
 
+## Pembelian dan pemakaian token API
+
+Layanan model terkenal seperti OpenAI, Anthropic Claude, dan Google Gemini pada umumnya menghitung biaya API berdasarkan token yang benar-benar diproses.
+
+```text
+Token input  = system prompt + memory + riwayat chat + pertanyaan
+Token output = jawaban yang dibuat model
+
+Biaya API = biaya token input + biaya token output
+```
+
+Harga input dan output dapat berbeda untuk setiap model. Beberapa layanan juga menghitung cached token, tool, atau fitur tambahan secara terpisah.
+
+### Context window bukan kuota
+
+```text
+Context window = kapasitas maksimum dalam satu request
+Kuota API      = batas atau saldo penggunaan
+Token usage    = jumlah token yang benar-benar diproses
+```
+
+Misalnya sebuah model memiliki context window 1.000.000 token. Angka tersebut hanya menunjukkan kapasitas maksimum, bukan berarti setiap request langsung memakai 1.000.000 token.
+
+```text
+Input  = 10.000 token
+Output =  2.000 token
+
+Pemakaian request = 12.000 token
+```
+
+Jika input benar-benar berjumlah 1.000.000 token, hampir tidak ada ruang tersisa untuk output. Total input dan output harus tetap berada dalam batas context window.
+
+### Menghapus history
+
+Menghapus chat history atau memory dapat mengurangi token input pada request berikutnya. Namun pemakaian dan biaya request sebelumnya tidak dikembalikan.
+
+```text
+Request lama sudah diproses → tetap ditagihkan
+History dihapus             → token request berikutnya lebih sedikit
+```
+
+Pada aplikasi chat, pengguna bisa membayar biaya langganan bulanan. Pada API untuk developer, pola yang umum adalah pay-as-you-go berdasarkan pemakaian, walaupun paket gratis, prabayar, dan kontrak perusahaan juga dapat tersedia.
+
+Model yang dijalankan secara lokal seperti proyek ini tidak memiliki biaya API per token. Biayanya berasal dari perangkat, RAM, listrik, penyimpanan, dan waktu komputasi.
+
+Dokumentasi resmi:
+
+- [OpenAI — What are tokens?](https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them)
+- [Anthropic — Pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
+- [Google Gemini API — Billing](https://ai.google.dev/gemini-api/docs/billing)
+
 ## Cara membaca hasil training
 
 ```text

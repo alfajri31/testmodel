@@ -1,3 +1,4 @@
 step2/output
 step3/output
 step4/output
+step4/tensorboard_logs/*

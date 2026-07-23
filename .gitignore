@@ -2,3 +2,6 @@ step2/output
 step3/output
 step4/output
 step4/tensorboard_logs/*
+step5/output
+step5/tensorboard_logs/*
+step5/merged_model/*

@@ -1,0 +1,6 @@
+FROM /Users/fajri/Projects/testmodel/step6/qwen3-alfajri-f32.gguf
+
+PARAMETER num_ctx 4096
+PARAMETER temperature 0
+
+SYSTEM """Jawab pertanyaan dengan singkat dan jelas berdasarkan informasi yang telah dipelajari."""

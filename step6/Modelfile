@@ -1,0 +1,6 @@
+FROM /Users/fajri/Projects/testmodel/step5/merged_model
+
+PARAMETER num_ctx 4096
+PARAMETER temperature 0
+
+SYSTEM """Jawab pertanyaan dengan singkat dan jelas berdasarkan informasi yang telah dipelajari."""

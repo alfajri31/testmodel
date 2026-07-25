@@ -230,6 +230,38 @@ Kata `standby` hanya analogi untuk hidden size utama antarlayer. Tensor tetap di
 
 ### Fungsi modul Qwen
 
+`q_proj`, `k_proj`, `v_proj`, `o_proj`, `gate_proj`, `up_proj`, dan `down_proj` adalah **modul neural network milik base model Qwen3**.
+
+Modul tersebut bukan file konfigurasi. Hubungannya:
+
+```text
+config.json
+→ menentukan bentuk dan ukuran neural network
+
+q_proj dan modul lainnya
+→ bagian neural network yang dibangun dari konfigurasi
+
+model.safetensors
+→ menyimpan angka bobot setiap modul
+```
+
+Contoh:
+
+```text
+config.json
+└── hidden_size = 1024
+
+Neural network
+└── q_proj = Linear(1024 → 2048)
+
+model.safetensors
+└── q_proj.weight = tensor [2048, 1024]
+```
+
+Jadi, kalimat yang tepat:
+
+> `q_proj` adalah modul neural network base model. Ukurannya ditentukan oleh konfigurasi dan angka bobotnya disimpan di Safetensors.
+
 Attention mencari hubungan antartoken:
 
 ```text

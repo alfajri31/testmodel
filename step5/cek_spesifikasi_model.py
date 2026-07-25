@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+from transformers import AutoModelForCausalLM
+
 
 BASE_MODEL_PATH = Path("/Users/fajri/Projects/mytestmodel")
 ADAPTER_PATH = Path("/Users/fajri/Projects/testmodel/step5/output")
@@ -22,6 +24,20 @@ def format_size(size_bytes):
 def read_json(path):
     with path.open(encoding="utf-8") as file:
         return json.load(file)
+
+
+def print_neural_network_structure():
+    print("\nSTRUKTUR NEURAL NETWORK BASE MODEL")
+    print("=" * 60)
+    print(f"Folder               : {BASE_MODEL_PATH}")
+
+    model = AutoModelForCausalLM.from_pretrained(
+        BASE_MODEL_PATH,
+        local_files_only=True,
+    )
+
+    print()
+    print(model)
 
 
 def print_model_specification(name, model_path):
@@ -107,6 +123,7 @@ def print_adapter_specification():
         print(f"Bobot adapter        : tidak ditemukan ({weights_path})")
 
 
+print_neural_network_structure()
 print_model_specification("BASE MODEL", BASE_MODEL_PATH)
 print_adapter_specification()
 print_model_specification("MERGED MODEL", MERGED_MODEL_PATH)

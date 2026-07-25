@@ -8,3 +8,5 @@ step5/merged_model/
 step6/llama.cpp/
 step6/.venv-llama-cpp/
 step6/*gguf
+step7/.venv/
+step7/screenshot.png

@@ -4,6 +4,12 @@ Project ini berisi proses belajar dari mengambil base model sampai menjalankan h
 
 ## Daftar Materi
 
+### Step 0 — Persiapan Python
+
+Memahami versi Python, `python3`, `python3.11`, `pip`, dan virtual environment.
+
+[Baca Step 0](step0/README.md)
+
 ### Step 1 — Menjalankan Base Model
 
 Mengambil model dari Hugging Face Bucket, menyimpannya di lokal, dan menjalankannya menggunakan Python.

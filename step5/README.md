@@ -421,6 +421,31 @@ Jadi, **neural network dulu, baru LoRA**.
 
 ### LoRA dan rank 8
 
+Rumus LoRA:
+
+```text
+Scaling        = alpha / rank
+Perubahan LoRA = Scaling × (B × A)
+W efektif      = W asli + Perubahan LoRA
+```
+
+Keterangan:
+
+```text
+W asli = weight atau bobot asli milik satu modul base model
+A       = matriks LoRA pertama
+B       = matriks LoRA kedua
+```
+
+Setiap modul pada setiap layer memiliki `W` sendiri:
+
+```text
+layer 0 → q_proj.weight
+layer 0 → k_proj.weight
+layer 1 → q_proj.weight
+...
+```
+
 Base model menyimpan hubungan penuh:
 
 ```text
@@ -456,6 +481,32 @@ LoRA B = (2.048 × 8)   = 16.384
 ────────────────────────────────
 Total                      = 24.576 parameter
 ```
+
+Bentuk perubahan bobot:
+
+```text
+B × A
+= [2.048, 8] × [8, 1.024]
+= [2.048, 1.024]
+```
+
+Hasilnya sama dengan bentuk `W asli q_proj`, sehingga dapat dijumlahkan.
+
+Pada konfigurasi ini:
+
+```text
+alpha   = 16
+rank    = 8
+scaling = 16 / 8 = 2
+```
+
+Sebelum merge:
+
+```text
+y = W asli(x) + 2 × B(A(x))
+```
+
+Base model dan LoRA dihitung melalui jalur terpisah, lalu hasilnya dijumlahkan.
 
 Alur tensor:
 
@@ -600,7 +651,9 @@ Parameter base    = dibekukan
 Setelah merge:
 
 ```text
-Bobot merged = bobot base + perubahan LoRA
+W merged
+= W asli + Scaling × (B × A)
+= W asli + 2 × (B × A)
 
 Parameter merged = 596.049.920 (0.596 B)
 ```
@@ -638,7 +691,7 @@ Sesudah merge = 151.936 token vocabulary
 Saat merge:
 
 ```text
-Bobot merged = bobot base + perubahan LoRA
+W merged = W asli + Scaling × (B × A)
 ```
 
 Jalur LoRA tidak lagi disimpan sebagai jalur terpisah. Pengaruh yang dipelajari sudah dilebur ke bobot utama.

@@ -118,26 +118,79 @@ Base model
 └── parameter A dan B   → ditambahkan dan dilatih
 ```
 
-Secara sederhana, bobot aktifnya dapat digambarkan sebagai:
+Rumus LoRA:
 
 ```text
-W aktif = W asli + (B × A)
+Scaling       = alpha / rank
+Perubahan LoRA = Scaling × (B × A)
+W efektif      = W asli + Perubahan LoRA
 ```
 
-- `W asli` adalah bobot Qwen yang tidak diubah.
-- `A` dan `B` adalah parameter tambahan LoRA.
-- `B × A` adalah perubahan yang diterapkan pada hasil base model.
-
-Contoh satu matriks asli berukuran `1024 × 1024` memiliki 1.048.576 parameter. Jika menggunakan `r=4`, LoRA membuat:
+Keterangan:
 
 ```text
-A = 4 × 1024     = 4.096 parameter
-B = 1024 × 4     = 4.096 parameter
-                         ─────── +
-                          8.192 parameter baru
+W = weight atau bobot asli pada satu modul base model
+A = matriks LoRA pertama
+B = matriks LoRA kedua
+r = rank atau ukuran jalur perantara
 ```
 
-LoRA tidak memilih 8.192 parameter dari bobot asli. LoRA membuat dan melatih 8.192 parameter baru pada contoh satu matriks tersebut. Dalam model sebenarnya, LoRA dipasang pada banyak target module dan banyak layer sehingga jumlah keseluruhannya lebih besar.
+`W` bukan seluruh model dalam satu angka. Setiap modul pada setiap layer mempunyai `W` sendiri, misalnya:
+
+```text
+layer 0 → q_proj.weight
+layer 0 → k_proj.weight
+layer 1 → q_proj.weight
+...
+```
+
+Contoh `q_proj` pada model ini:
+
+```text
+W asli = [2.048, 1.024]
+A       = [8, 1.024]
+B       = [2.048, 8]
+
+B × A
+= [2.048, 8] × [8, 1.024]
+= [2.048, 1.024]
+```
+
+Hasil `B × A` memiliki bentuk yang sama dengan `W asli`, sehingga keduanya dapat dijumlahkan.
+
+Konfigurasi proyek ini:
+
+```text
+alpha   = 16
+rank    = 8
+scaling = 16 / 8 = 2
+```
+
+Maka:
+
+```text
+Perubahan LoRA = 2 × (B × A)
+W efektif      = W asli + 2 × (B × A)
+```
+
+Sebelum merge, library biasanya menghitung dua jalur secara terpisah:
+
+```text
+y = W asli(x) + Scaling × B(A(x))
+```
+
+`W efektif` adalah gambaran matematis; library tidak harus membuat satu tensor gabungan saat training. Setelah merge, perubahan LoRA benar-benar dilebur:
+
+```text
+W merged = W asli + Scaling × (B × A)
+```
+
+Saat training:
+
+```text
+W asli → dibekukan
+A dan B → dilatih
+```
 
 ### Fungsi rank
 

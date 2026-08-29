@@ -1,4 +1,4 @@
-# Step 4 — Training LoRA dan TensorBoard
+# Step 5 — Training LoRA dan TensorBoard
 
 Step ini digunakan untuk melatih LoRA dan melihat hasil proses training melalui TensorBoard.
 

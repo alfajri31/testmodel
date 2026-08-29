@@ -1,4 +1,4 @@
-# Step 5 — Merge Base Model dan LoRA
+# Step 6 — Merge Base Model dan LoRA
 
 Pada step ini, adapter LoRA hasil training digabungkan ke base model.
 

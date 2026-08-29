@@ -1,4 +1,4 @@
-# README Step 1 — Menjalankan Model Hugging Face dari Bucket
+# README Step 2 — Menjalankan Model Hugging Face dari Bucket
 
 Pada langkah pertama ini, kita mempelajari cara menyinkronkan model dari Hugging Face Storage Bucket ke komputer dan menjalankannya sebagai model lokal.
 

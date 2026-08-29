@@ -1,10 +1,10 @@
-# Step 6 — Deploy Model ke Ollama
+# Step 7 — Deploy Model ke Ollama
 
-Pada step ini, merged model dari Step 5 dijalankan di Ollama melalui dua jalur:
+Pada step ini, merged model dari Step 6 dijalankan di Ollama melalui dua jalur:
 
 ```text
 Base Model + LoRA
-        ↓ merge pada Step 5
+        ↓ merge pada Step 6
 Merged Model Safetensors
         ├── import langsung ke Ollama
         └── konversi llama.cpp → GGUF → Ollama
@@ -28,7 +28,7 @@ alfajri-qwen3-gguf-f32
 
 Keduanya berasal dari merged model yang sama dan belum menggunakan quantization Q4/Q8.
 
-## Struktur Step 6
+## Struktur Step 7
 
 ```text
 step6/
@@ -458,9 +458,9 @@ SYSTEM      → instruksi dasar untuk model
 
 `num_ctx 4096` bukan batas RAM. Nilai tersebut adalah jumlah maksimum token context yang disediakan untuk percakapan. Context yang lebih besar biasanya membutuhkan memori lebih banyak.
 
-## Kesimpulan Step 6
+## Kesimpulan Step 7
 
-Pada Step 6, merged model dari Step 5 berhasil dimasukkan ke Ollama dengan dua cara:
+Pada Step 7, merged model dari Step 6 berhasil dimasukkan ke Ollama dengan dua cara:
 
 ```text
 Merged Safetensors
@@ -517,7 +517,7 @@ Safetensors F32/BF16 → GGUF Q8/Q4
 └── bobot dibulatkan melalui quantization
 ```
 
-Model LLM umumnya tidak menggunakan F64 karena membutuhkan ukuran file dan memori yang sangat besar. Merged model pada Step 5 menggunakan F32 dan dikonversi menjadi GGUF F32:
+Model LLM umumnya tidak menggunakan F64 karena membutuhkan ukuran file dan memori yang sangat besar. Merged model pada Step 6 menggunakan F32 dan dikonversi menjadi GGUF F32:
 
 ```text
 Merged Safetensors F32
@@ -525,11 +525,11 @@ Merged Safetensors F32
 GGUF F32
 ```
 
-Karena itu, konversi pada Step 6 bukan proses pengurangan dari F64 menjadi F32. Kemampuan model seharusnya tetap sangat dekat. Perbedaan tampilan jawaban, seperti hilangnya `<think>`, lebih berkaitan dengan template, renderer, parser, dan runtime Ollama.
+Karena itu, konversi pada Step 7 bukan proses pengurangan dari F64 menjadi F32. Kemampuan model seharusnya tetap sangat dekat. Perbedaan tampilan jawaban, seperti hilangnya `<think>`, lebih berkaitan dengan template, renderer, parser, dan runtime Ollama.
 
 Penurunan kemampuan lebih mungkin terjadi jika model di-quantization ke presisi lebih rendah. Semakin agresif quantization, semakin besar kemungkinan detail bobot dan kualitas jawaban berkurang.
 
-Fine-tuning pada Step 2–5 yang membuat bobot model lebih cenderung mengikuti dataset. Step 6 hanya menyiapkan model tersebut agar dapat dijalankan pada runtime yang dipilih.
+Fine-tuning pada Step 3–6 yang membuat bobot model lebih cenderung mengikuti dataset. Step 7 hanya menyiapkan model tersebut agar dapat dijalankan pada runtime yang dipilih.
 
 Kesimpulan sederhananya:
 

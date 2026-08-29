@@ -1,6 +1,6 @@
-# README Step 3 — Pengaruh Dataset dan Konfigurasi Generation
+# README Step 4 — Pengaruh Dataset dan Konfigurasi Generation
 
-Step 3 mempelajari cara menjalankan model secara interaktif serta memahami mengapa jawaban hasil fine-tuning tidak selalu sama dengan isi dataset.
+Step 4 mempelajari cara menjalankan model secara interaktif serta memahami mengapa jawaban hasil fine-tuning tidak selalu sama dengan isi dataset.
 
 Dokumentasi ini tidak menggunakan TensorBoard. Evaluasi dilakukan langsung dengan membandingkan pertanyaan dan jawaban model melalui `test_model.py`.
 
@@ -16,7 +16,7 @@ step3/
 └── train_peft.py           # Training adapter PEFT/LoRA
 ```
 
-## Alur Step 3
+## Alur Step 4
 
 ```text
 dataset/dataset.jsonl

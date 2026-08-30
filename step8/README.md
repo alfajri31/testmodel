@@ -82,10 +82,12 @@ hidden_size = 4
 Setiap posisi token masuk ke Transformer layer sebagai vector empat dimensi:
 
 ```text
-"Saya"    → [a, b, c, d]
-"terkena" → [e, f, g, h]
-"bisa"    → [i, j, k, l]
+"Saya"    → [ 0.12, -0.43, 0.71,  0.20]
+"terkena" → [-0.51,  0.82, 0.14, -0.30]
+"bisa"    → [ 0.44, -0.18, 0.63,  0.29]
 ```
+
+Angka tersebut hanya ilustrasi untuk menunjukkan bahwa setiap token mempunyai empat koordinat, bukan nilai asli dari model.
 
 Pada model Transformer biasa, output lengkap satu layer dikembalikan ke ukuran `hidden_size` yang sama:
 

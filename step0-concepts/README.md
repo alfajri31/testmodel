@@ -81,6 +81,61 @@ Transformer sebenarnya menghitung attention untuk setiap posisi token. Namun unt
 
 Attention memberikan bobot relevansi kepada token-token tersebut.
 
+### Cara Bobot Relevansi Membentuk Contextual Vector
+
+Untuk pemahaman dasar, contextual vector dapat dibayangkan dengan rumus:
+
+```text
+contextual vector
+= jumlah dari (bobot relevansi × vector setiap token)
+```
+
+Pada model mainan di pengantar ini, `vector setiap token` menggunakan embedding vector awal. Ini adalah penyederhanaan agar hubungan antara bobot relevansi dan contextual vector mudah dipahami.
+
+Jika konteks berisi tiga token:
+
+```text
+"Saya terkena bisa"
+```
+
+maka bentuk sederhananya:
+
+```text
+contextual vector =
+(relevansi "Saya"    × vector "Saya")
++
+(relevansi "terkena" × vector "terkena")
++
+(relevansi "bisa"    × vector "bisa")
+```
+
+Bobot relevansi adalah satu angka, sedangkan vector token mempunyai beberapa dimensi. Satu bobot relevansi mengalikan seluruh dimensi vector pasangannya.
+
+Contoh:
+
+```text
+bobot relevansi "terkena" = 0.7
+vector "terkena"          = [-1.0, 0.0]
+```
+
+```text
+0.7 × [-1.0, 0.0]
+= [0.7 × -1.0, 0.7 × 0.0]
+= [-0.7, 0.0]
+```
+
+Setelah setiap vector dikalikan dengan bobot relevansinya, semua hasil dijumlahkan per dimensi. Hasil penjumlahan itulah contextual vector sederhana untuk posisi token yang sedang diproses.
+
+```text
+Bobot relevansi
+↓ mengatur besar pengaruh setiap token
+Vector token
+↓ membawa informasi numerik token
+Perkalian dan penjumlahan
+↓
+Contextual vector
+```
+
 ### Konteks `"Saya bisa"`
 
 Anggap attention menghasilkan:
@@ -148,39 +203,73 @@ Inilah fungsi contextual vector: merepresentasikan token terakhir beserta kontek
 
 ## 3. Dari Mana Bobot Relevansi Berasal?
 
-Di dalam attention terdapat beberapa projection:
+Untuk pemahaman dasar, bagian yang perlu dikenal lebih dulu adalah:
 
 ```text
 q_proj
 k_proj
-v_proj
-o_proj
 ```
 
-Untuk pemahaman awal, pembagiannya cukup seperti ini:
+Keduanya memiliki bobot matriks hasil training:
 
 ```text
-q_proj dan k_proj
-→ bagian dari proses perhitungan bobot relevansi antartoken
-
-v_proj
-→ menyiapkan informasi dari token yang akan dicampurkan
-
-o_proj
-→ mengolah hasil attention agar dapat diteruskan oleh model
+q_proj → mempunyai bobot matriks Wq
+k_proj → mempunyai bobot matriks Wk
 ```
 
-Pada contoh `"Saya terkena bisa"`, proses yang melibatkan `q_proj` dan `k_proj` dapat menghasilkan bobot relevansi seperti:
+Bobot matriks tersebut digunakan untuk mengolah vector token:
 
 ```text
+Vector token
+↓ q_proj dengan Wq
+Query
+
+Vector token
+↓ k_proj dengan Wk
+Key
+```
+
+Query dari token terakhir dibandingkan dengan Key token-token yang dapat dilihat. Proses tersebut menghasilkan bobot relevansi.
+
+Pada contoh `"Saya terkena bisa"`:
+
+```text
+Token terakhir: "bisa"
+↓
+Query "bisa" dibandingkan dengan Key:
+- "Saya"
+- "terkena"
+- "bisa"
+↓
+Bobot relevansi
+
 "Saya"    → 10%
 "terkena" → 70%
 "bisa"    → 20%
 ```
 
-Bobot relevansi tersebut dihitung ulang untuk setiap kalimat. Nilainya bukan persentase kemunculan kata dalam data training.
+Perlu dibedakan:
 
-Perhitungan detail Query, Key, attention score, dan softmax sengaja tidak dibahas pada pengantar ini. Bagian tersebut akan dibahas pada README lanjutan tentang cara kerja attention.
+```text
+Bobot matriks Wq dan Wk
+→ parameter hasil training
+→ tersimpan dalam checkpoint
+→ tetap saat inference
+
+Bobot relevansi 10%, 70%, dan 20%
+→ hasil perhitungan untuk kalimat saat ini
+→ dihitung ulang ketika konteks berubah
+```
+
+Bobot relevansi bukan persentase kemunculan kata dalam data training. Perhitungan detail Query, Key, attention score, dan softmax sengaja belum dibahas pada pengantar ini.
+
+Projection lain seperti `v_proj` dan `o_proj` juga belum dibahas agar fokus awal tetap pada hubungan berikut:
+
+```text
+q_proj dan k_proj
+→ Query dan Key
+→ bobot relevansi
+```
 
 ## 4. `lm_head` Memprediksi Token Berikutnya
 

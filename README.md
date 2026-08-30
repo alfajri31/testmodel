@@ -58,6 +58,12 @@ Merekam struktur model sebagai teks dan graph di TensorBoard, lalu menguji adapt
 
 [Baca Step 7](step7/README.md)
 
+### Step 8 — Dimensi Vector, Contextual Vector, dan Prediksi Token
+
+Memahami dimensi sebagai ruang representasi, perubahan vector pada setiap Transformer layer, serta cara `lm_head` menghitung kandidat token berikutnya.
+
+[Baca Step 8](step8/README.md)
+
 ## Alur Singkat
 
 ```text
@@ -76,6 +82,8 @@ Konversi GGUF
 Deploy ke Ollama
     ↓
 Visualisasi Struktur dan Uji Inference
+    ↓
+Memahami Alur Vector hingga Prediksi Token
 ```
 
 ## Ringkasan
@@ -86,4 +94,6 @@ Merge       → menggabungkan LoRA dengan base model
 Uji model   → menjalankan inference dan melihat struktur model
 Konversi    → mengubah format model untuk runtime
 Deploy      → menjalankan model melalui Ollama
+Dimensi     → menyediakan ruang untuk merepresentasikan banyak pola konteks
+lm_head     → mengubah contextual vector akhir menjadi skor seluruh vocabulary
 ```

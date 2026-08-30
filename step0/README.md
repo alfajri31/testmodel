@@ -1,4 +1,4 @@
-# Step 1 — Python untuk Proyek
+# Step 0 — Python untuk Proyek
 
 ## Memahami nama dan versi Python
 

@@ -1,4 +1,4 @@
-# README Step 3 — Fine-Tuning Qwen dengan PEFT/LoRA
+# README Step 2 — Fine-Tuning Qwen dengan PEFT/LoRA
 
 Pada langkah kedua ini, model lokal Qwen3-0.6B dilatih menggunakan dataset percakapan sederhana. Training memakai PEFT dengan metode LoRA sehingga bobot utama Qwen tetap utuh dan hasil pembelajaran disimpan sebagai adapter yang jauh lebih kecil.
 

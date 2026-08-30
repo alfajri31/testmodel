@@ -10,3 +10,5 @@ step6/.venv-llama-cpp/
 step6/*gguf
 step7/.venv/
 step7/screenshot.png
+step7/output/
+step7/tensorboard_logs/

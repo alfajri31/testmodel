@@ -1,4 +1,4 @@
-# Step 0 — Cara LLM Memprediksi Token Berikutnya
+# Pengantar — Cara LLM Memprediksi Token Berikutnya
 
 Step ini menjelaskan satu pertanyaan utama:
 
@@ -146,26 +146,41 @@ Hasilnya:
 
 Inilah fungsi contextual vector: merepresentasikan token terakhir beserta konteks yang sudah dibacanya.
 
-## 3. Dari Mana Bobot Attention Berasal?
+## 3. Dari Mana Bobot Relevansi Berasal?
 
-Model membuat Query, Key, dan Value menggunakan projection:
-
-```text
-Q = q_proj(hidden_vector)
-K = k_proj(hidden_vector)
-V = v_proj(hidden_vector)
-```
-
-Query token terakhir dibandingkan dengan Key token itu sendiri dan token-token sebelumnya:
+Di dalam attention terdapat beberapa projection:
 
 ```text
-attention_score = (Q × Kᵀ) / √d
-attention_weight = softmax(attention_score)
+q_proj
+k_proj
+v_proj
+o_proj
 ```
 
-Hasil softmax menjadi bobot relevansi seperti `10%`, `70%`, dan `20%`.
+Untuk pemahaman awal, pembagiannya cukup seperti ini:
 
-Bobot pada `q_proj`, `k_proj`, dan `v_proj` dipelajari saat training. Namun attention weight dihitung ulang untuk setiap kalimat. Attention weight bukan persentase kemunculan kata dalam data training.
+```text
+q_proj dan k_proj
+→ bagian dari proses perhitungan bobot relevansi antartoken
+
+v_proj
+→ menyiapkan informasi dari token yang akan dicampurkan
+
+o_proj
+→ mengolah hasil attention agar dapat diteruskan oleh model
+```
+
+Pada contoh `"Saya terkena bisa"`, proses yang melibatkan `q_proj` dan `k_proj` dapat menghasilkan bobot relevansi seperti:
+
+```text
+"Saya"    → 10%
+"terkena" → 70%
+"bisa"    → 20%
+```
+
+Bobot relevansi tersebut dihitung ulang untuk setiap kalimat. Nilainya bukan persentase kemunculan kata dalam data training.
+
+Perhitungan detail Query, Key, attention score, dan softmax sengaja tidak dibahas pada pengantar ini. Bagian tersebut akan dibahas pada README lanjutan tentang cara kerja attention.
 
 ## 4. `lm_head` Memprediksi Token Berikutnya
 

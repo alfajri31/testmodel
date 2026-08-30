@@ -266,7 +266,122 @@ hidden × Wq/Wk
 
 Angka seperti `20%`, `70%`, dan `10%` yang digunakan pada bagian lain hanyalah pembulatan ilustratif agar pencampuran V lebih mudah dibaca.
 
-## 7. V: membawa informasi setiap token
+## 7. Contoh perhitungan dengan dua head
+
+Sekarang gunakan konfigurasi:
+
+```text
+hidden_size = 4
+jumlah head = 2
+dimensi setiap head = 2
+```
+
+Vector Q dan K hasil projection mempunyai empat dimensi, kemudian dibagi menjadi dua head:
+
+```text
+Q_bisa total = [1.0, 0.0, 0.0, 1.0]
+
+Head 1 memakai → [1.0, 0.0]
+Head 2 memakai → [0.0, 1.0]
+```
+
+Setiap head mempunyai Q dan K dua dimensi serta menghitung relevansinya sendiri.
+
+### Head 1
+
+```text
+Q_bisa_head_1    = [1.0, 0.0]
+
+K_Saya_head_1    = [1.0, 0.2]
+K_terkena_head_1 = [2.0, 0.1]
+K_bisa_head_1    = [0.5, 0.4]
+```
+
+Dot product:
+
+```text
+Q_bisa_head_1 · K_Saya_head_1
+= [1.0, 0.0] · [1.0, 0.2]
+= 1.0
+
+Q_bisa_head_1 · K_terkena_head_1
+= [1.0, 0.0] · [2.0, 0.1]
+= 2.0
+
+Q_bisa_head_1 · K_bisa_head_1
+= [1.0, 0.0] · [0.5, 0.4]
+= 0.5
+```
+
+Softmax:
+
+```text
+softmax([1.0, 2.0, 0.5])
+≈ [0.23, 0.63, 0.14]
+
+Head 1:
+Saya    → 23%
+terkena → 63%
+bisa    → 14%
+```
+
+### Head 2
+
+```text
+Q_bisa_head_2    = [0.0, 1.0]
+
+K_Saya_head_2    = [0.2, 1.5]
+K_terkena_head_2 = [0.1, 0.5]
+K_bisa_head_2    = [0.4, 1.0]
+```
+
+Dot product:
+
+```text
+Q_bisa_head_2 · K_Saya_head_2
+= [0.0, 1.0] · [0.2, 1.5]
+= 1.5
+
+Q_bisa_head_2 · K_terkena_head_2
+= [0.0, 1.0] · [0.1, 0.5]
+= 0.5
+
+Q_bisa_head_2 · K_bisa_head_2
+= [0.0, 1.0] · [0.4, 1.0]
+= 1.0
+```
+
+Softmax:
+
+```text
+softmax([1.5, 0.5, 1.0])
+≈ [0.51, 0.19, 0.31]
+
+Head 2:
+Saya    → sekitar 50.6%
+terkena → sekitar 18.6%
+bisa    → sekitar 30.7%
+```
+
+Terlihat bahwa kedua head membaca context window yang sama, tetapi menghasilkan pola relevansi berbeda:
+
+```text
+Head 1 lebih kuat memperhatikan "terkena"
+Head 2 lebih kuat memperhatikan "Saya"
+```
+
+Persentase setiap head selalu dinormalisasi secara terpisah:
+
+```text
+total asli Head 1 = 100%
+total asli Head 2 = 100%
+```
+
+Jumlah angka yang sudah dibulatkan dapat terlihat sedikit berbeda dari `100%`.
+
+Dalam model nyata, head tidak diberi tugas secara manual. Perbedaan pola tersebut terbentuk dari bobot hasil training.
+
+## 8. V: membawa informasi setiap token
 
 V dibuat secara terpisah menggunakan `v_proj`:
 
@@ -276,13 +391,53 @@ hidden_terkena × Wv → V_terkena
 hidden_bisa    × Wv → V_bisa
 ```
 
-Bobot relevansi kemudian digunakan untuk mencampurkan V:
+Pada contoh dua head, setiap head juga mempunyai bagian V sendiri. Misalkan:
 
 ```text
-20% × V_Saya
-+ 70% × V_terkena
-+ 10% × V_bisa
-= output satu attention head pada posisi "bisa"
+V Head 1:
+V_Saya_head_1    = [ 1.0, 0.0]
+V_terkena_head_1 = [-1.0, 0.0]
+V_bisa_head_1    = [ 0.0, 1.0]
+
+V Head 2:
+V_Saya_head_2    = [0.2, 0.8]
+V_terkena_head_2 = [0.6, 0.1]
+V_bisa_head_2    = [0.1, 0.5]
+```
+
+Head 1 menggunakan bobot relevansi milik Head 1:
+
+```text
+23% × V_Saya_head_1
++ 63% × V_terkena_head_1
++ 14% × V_bisa_head_1
+
+= 0.23 × [ 1.0, 0.0]
++ 0.63 × [-1.0, 0.0]
++ 0.14 × [ 0.0, 1.0]
+
+= [-0.40, 0.14]
+```
+
+Head 2 menggunakan bobot relevansi milik Head 2:
+
+```text
+50.6% × V_Saya_head_2
++ 18.6% × V_terkena_head_2
++ 30.7% × V_bisa_head_2
+
+≈ 0.506 × [0.2, 0.8]
++ 0.186 × [0.6, 0.1]
++ 0.307 × [0.1, 0.5]
+
+≈ [0.24, 0.58]
+```
+
+Maka setiap head menghasilkan vector dua dimensi:
+
+```text
+output Head 1 → [-0.40, 0.14]
+output Head 2 → [ 0.24, 0.58]
 ```
 
 Ringkasnya:
@@ -294,26 +449,62 @@ V       → menyediakan informasi vector yang dipengaruhi
 
 V bukan hasil dari K. Q, K, dan V dibuat secara paralel dari hidden vector menggunakan matrix bobot yang berbeda.
 
-## 8. O: menggabungkan semua head
+## 9. O: menggabungkan semua head
 
 Misalkan dua head menghasilkan:
 
 ```text
-Head 1 → [0.7, 0.3]
-Head 2 → [-0.6, 0.2]
+Head 1 → [-0.40, 0.14]
+Head 2 → [ 0.24, 0.58]
 ```
 
 Keduanya digabungkan:
 
 ```text
-[0.7, 0.3, -0.6, 0.2]
+[-0.40, 0.14, 0.24, 0.58]
 ```
+
+Proses penggabungan ini disebut `concatenate`. Output head disambungkan, bukan langsung dijumlahkan:
+
+```text
+Head 1 + Head 2                         ❌ bukan penjumlahan vector
+concat(Head 1, Head 2)                  ✅ penyambungan vector
+```
+
+Jika ada head lain, hasilnya ikut ditambahkan ke **daftar gabungan**:
+
+```text
+Head 1 → [-0.40, 0.14]
+Head 2 → [ 0.24, 0.58]
+Head 3 → [ 0.40, -0.10]
+
+concat(Head 1, Head 2, Head 3)
+→ [-0.40, 0.14, 0.24, 0.58, 0.40, -0.10]
+```
+
+Jadi kata “ditambahkan” di sini berarti **head tambahan ikut disambungkan**, bukan nilainya dijumlahkan per dimensi.
 
 Gabungan tersebut diproses oleh `o_proj`:
 
 ```text
 gabungan head × Wo
 → output attention berukuran 4 dimensi
+```
+
+Ukuran `Wo` menyesuaikan total dimensi hasil seluruh head dan mengubahnya kembali ke `hidden_size`:
+
+```text
+2 head × 2 dimensi = 4 dimensi gabungan
+→ o_proj
+→ 4 dimensi hidden output
+```
+
+Jika contoh arsitekturnya menggunakan tiga head dengan dua dimensi per head:
+
+```text
+3 head × 2 dimensi = 6 dimensi gabungan
+→ o_proj
+→ kembali ke hidden_size yang ditentukan model
 ```
 
 `o_proj` mempunyai dua fungsi utama:
@@ -341,7 +532,7 @@ Q dan K
 → contextual vector baru
 ```
 
-## 9. Context window dan contextual vector
+## 10. Context window dan contextual vector
 
 Keduanya berhubungan langsung, tetapi bukan hal yang sama:
 
@@ -382,7 +573,7 @@ token konteks tidak lagi diberikan
 
 Namun, menghapus memory percakapan tidak menghapus pengetahuan hasil training dari bobot model. Jika teks konteks masih dikirim kembali, contextual vector dapat dihitung ulang.
 
-## 10. Setiap layer memperbarui vector
+## 11. Setiap layer memperbarui vector
 
 Output satu layer menjadi input layer berikutnya:
 
@@ -411,7 +602,7 @@ vector baru
 
 Vector yang terus diperbarui dan ruang dimensi yang cukup besar memberi model kapasitas untuk membentuk serta memisahkan pola relevansi yang lebih kaya. Namun, dimensi yang lebih besar tetap harus didukung training dan data yang baik.
 
-## 11. `lm_head` membandingkan seluruh vocabulary
+## 12. `lm_head` membandingkan seluruh vocabulary
 
 Setelah layer terakhir, model mengambil contextual vector pada posisi terakhir:
 
@@ -468,7 +659,7 @@ sampling        → memilih berdasarkan distribusi probabilitas
 
 Jadi token berskor tinggi adalah kandidat terkuat, tetapi strategi decoding menentukan token yang benar-benar dipilih.
 
-## 12. Prediksi berikutnya dilakukan dengan loop
+## 13. Prediksi berikutnya dilakukan dengan loop
 
 Misalkan token yang dipilih adalah `"ular"`:
 

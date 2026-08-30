@@ -172,7 +172,17 @@ hidden_terkena × Wk → K_terkena
 hidden_bisa    × Wk → K_bisa
 ```
 
-Kemudian terjadi perbandingan silang:
+Jadi Q dan K sama-sama berasal dari perkalian hidden vector dengan matrix bobot model:
+
+```text
+hidden_bisa × Wq → Q_bisa
+
+hidden_Saya    × Wk → K_Saya
+hidden_terkena × Wk → K_terkena
+hidden_bisa    × Wk → K_bisa
+```
+
+Kemudian `Q_bisa` dibandingkan dengan setiap K menggunakan dot product:
 
 ```text
 Q_bisa · K_Saya
@@ -188,22 +198,73 @@ Secara sederhana dapat dibaca:
 "bisa" memeriksa hubungannya dengan "bisa" sendiri
 ```
 
-Setelah softmax, misalnya diperoleh bobot relevansi:
+Contoh berikut sengaja menggunakan dua dimensi agar perhitungannya mudah dilihat:
 
 ```text
-Saya    → 20%
-terkena → 70%
-bisa    → 10%
+Q_bisa    = [1.0, 0.0]
+
+K_Saya    = [1.0, 0.2]
+K_terkena = [2.0, 0.1]
+K_bisa    = [0.5, 0.4]
 ```
 
-Persentase tersebut bukan isi K. Persentase adalah hasil perbandingan Q dengan semua K yang dapat dilihat.
+Hitung skor relevansi mentah:
 
 ```text
-Q dan K
-→ skor relevansi
+skor Saya
+= Q_bisa · K_Saya
+= [1.0, 0.0] · [1.0, 0.2]
+= (1.0 × 1.0) + (0.0 × 0.2)
+= 1.0
+
+skor terkena
+= Q_bisa · K_terkena
+= [1.0, 0.0] · [2.0, 0.1]
+= (1.0 × 2.0) + (0.0 × 0.1)
+= 2.0
+
+skor bisa
+= Q_bisa · K_bisa
+= [1.0, 0.0] · [0.5, 0.4]
+= (1.0 × 0.5) + (0.0 × 0.4)
+= 0.5
+```
+
+Hasil perkalian Q dengan semua K adalah:
+
+```text
+Saya    → skor 1.0
+terkena → skor 2.0
+bisa    → skor 0.5
+```
+
+Skor tersebut belum berupa probabilitas. `softmax` mengubahnya menjadi bobot relevansi yang jumlahnya `100%`:
+
+```text
+softmax([1.0, 2.0, 0.5])
+≈ [0.23, 0.63, 0.14]
+```
+
+Hasilnya:
+
+```text
+Saya    → 23%
+terkena → 63%
+bisa    → 14%
+```
+
+Persentase tersebut bukan isi K dan bukan langsung keluar dari `Wk`. Persentase muncul setelah:
+
+```text
+hidden × Wq/Wk
+→ Q dan K
+→ Q_bisa · setiap K
+→ skor relevansi mentah
 → softmax
-→ bobot relevansi
+→ bobot relevansi dengan total 100%
 ```
+
+Angka seperti `20%`, `70%`, dan `10%` yang digunakan pada bagian lain hanyalah pembulatan ilustratif agar pencampuran V lebih mudah dibaca.
 
 ## 7. V: membawa informasi setiap token
 

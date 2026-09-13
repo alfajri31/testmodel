@@ -175,6 +175,8 @@ hidden_bisa = [0.5, 0.5, 0.0, 0.5]
 
 Nilai tersebut adalah contoh input ke `q_proj`. Pada Layer pertama, nilainya berasal dari representasi embedding token beserta pemrosesan awal model. Pada layer berikutnya, nilainya berasal dari output layer sebelumnya.
 
+Pada tahap ini, asal dan cara mendapatkan nilai bobot `Wq` **belum dibahas**. Angka matrix berikut hanya ilustrasi untuk menunjukkan bagaimana hidden vector diubah menjadi Q total.
+
 Misalkan `q_proj` pada layer ini mempunyai matrix:
 
 ```text

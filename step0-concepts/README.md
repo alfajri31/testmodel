@@ -252,79 +252,227 @@ Hasilnya:
 
 Inilah fungsi contextual vector: merepresentasikan token terakhir beserta konteks yang sudah dibacanya.
 
-## 3. Dari Mana Bobot Relevansi Berasal?
+## 3. Proses `q_proj`, `k_proj`, `v_proj`, dan `o_proj`
 
-Untuk pemahaman dasar, bagian yang perlu dikenal lebih dulu adalah:
+Bagian ini belum membahas matrix bobot `W`. Kita langsung memakai hasil yang keluar dari setiap projection.
+
+Gunakan konfigurasi model mainan:
 
 ```text
-q_proj
-k_proj
+Kalimat             = "Saya terkena bisa"
+Token terakhir      = "bisa"
+Jumlah head         = 2
+Dimensi setiap head = 2
+Total dimensi       = 4
 ```
 
-Keduanya memiliki bobot matriks hasil training:
+### 3.1 `q_proj`: membuat Query dari token terakhir
+
+Untuk memprediksi token setelah prompt, Query yang menjadi fokus berasal dari posisi token terakhir `"bisa"`:
 
 ```text
-q_proj → mempunyai bobot matriks Wq
-k_proj → mempunyai bobot matriks Wk
+Q_bisa total = [1.0, 0.0, 0.0, 1.0]
 ```
 
-Bobot matriks tersebut digunakan untuk mengolah vector token:
+Q tersebut dibagi untuk dua head:
 
 ```text
-Vector token
-↓ q_proj dengan Wq
-Query
-
-Vector token
-↓ k_proj dengan Wk
-Key
+Q_bisa Head 1 = [1.0, 0.0]
+Q_bisa Head 2 = [0.0, 1.0]
 ```
 
-Query dari token terakhir dibandingkan dengan Key token-token yang dapat dilihat. Proses tersebut menghasilkan bobot relevansi.
+Kedua Query berasal dari token `"bisa"` yang sama. Setiap head hanya memprosesnya melalui bagian vector yang berbeda.
 
-Pada contoh `"Saya terkena bisa"`:
+### 3.2 `k_proj`: membuat Key untuk semua token
+
+Setiap token yang dapat dilihat menyediakan Key pada setiap head.
+
+Head 1:
 
 ```text
-Token terakhir: "bisa"
-↓
-Query "bisa" dibandingkan dengan Key:
-- "Saya"
-- "terkena"
-- "bisa"
-↓
-Bobot relevansi
-
-"Saya"    → 10%
-"terkena" → 70%
-"bisa"    → 20%
+K_Saya Head 1    = [1.0, 0.2]
+K_terkena Head 1 = [2.0, 0.1]
+K_bisa Head 1    = [0.5, 0.4]
 ```
 
-Perlu dibedakan:
+Head 2:
 
 ```text
-Bobot matriks Wq dan Wk
-→ parameter hasil training
-→ tersimpan dalam checkpoint
-→ tetap saat inference
-
-Bobot relevansi 10%, 70%, dan 20%
-→ hasil perhitungan untuk kalimat saat ini
-→ dihitung ulang ketika konteks berubah
+K_Saya Head 2    = [0.2, 1.5]
+K_terkena Head 2 = [0.1, 0.5]
+K_bisa Head 2    = [0.4, 1.0]
 ```
 
-Bobot relevansi bukan persentase kemunculan kata dalam data training. Perhitungan detail Query, Key, attention score, dan softmax sengaja belum dibahas pada pengantar ini.
-
-Projection lain seperti `v_proj` dan `o_proj` juga belum dibahas agar fokus awal tetap pada hubungan berikut:
+Q dan K selalu dibandingkan di dalam head yang sama:
 
 ```text
-q_proj dan k_proj
-→ Query dan Key
-→ bobot relevansi
+Q_bisa Head 1 · K token Head 1
+Q_bisa Head 2 · K token Head 2
+```
+
+Bukan:
+
+```text
+Q_bisa Head 1 · K token Head 2 ❌
+```
+
+### 3.3 Menghitung relevansi Head 1
+
+```text
+Q_bisa Head 1 = [1.0, 0.0]
+```
+
+```text
+Dengan "Saya":
+[1.0, 0.0] · [1.0, 0.2]
+= (1.0 × 1.0) + (0.0 × 0.2)
+= 1.0
+
+Dengan "terkena":
+[1.0, 0.0] · [2.0, 0.1]
+= (1.0 × 2.0) + (0.0 × 0.1)
+= 2.0
+
+Dengan "bisa":
+[1.0, 0.0] · [0.5, 0.4]
+= (1.0 × 0.5) + (0.0 × 0.4)
+= 0.5
+```
+
+Setelah softmax:
+
+```text
+Saya    → 23%
+terkena → 63%
+bisa    → 14%
+```
+
+Head 1 paling memperhatikan `"terkena"`.
+
+### 3.4 Menghitung relevansi Head 2
+
+```text
+Q_bisa Head 2 = [0.0, 1.0]
+```
+
+```text
+Dengan "Saya":
+[0.0, 1.0] · [0.2, 1.5]
+= (0.0 × 0.2) + (1.0 × 1.5)
+= 1.5
+
+Dengan "terkena":
+[0.0, 1.0] · [0.1, 0.5]
+= (0.0 × 0.1) + (1.0 × 0.5)
+= 0.5
+
+Dengan "bisa":
+[0.0, 1.0] · [0.4, 1.0]
+= (0.0 × 0.4) + (1.0 × 1.0)
+= 1.0
+```
+
+Setelah softmax:
+
+```text
+Saya    → sekitar 50.6%
+terkena → sekitar 18.6%
+bisa    → sekitar 30.7%
+```
+
+Head 2 paling memperhatikan `"Saya"`. Dengan demikian, dua head dapat menghasilkan pola relevansi berbeda untuk context window yang sama.
+
+### 3.5 `v_proj`: membuat Value dan mencampurkan informasi
+
+Misalkan `v_proj` menghasilkan Value berikut.
+
+Head 1:
+
+```text
+V_Saya Head 1    = [ 1.0, 0.0]
+V_terkena Head 1 = [-1.0, 0.0]
+V_bisa Head 1    = [ 0.0, 1.0]
+```
+
+Gunakan bobot relevansi Head 1:
+
+```text
+23% × [ 1.0, 0.0]
++ 63% × [-1.0, 0.0]
++ 14% × [ 0.0, 1.0]
+= [-0.40, 0.14]
+```
+
+Head 2:
+
+```text
+V_Saya Head 2    = [0.2, 0.8]
+V_terkena Head 2 = [0.6, 0.1]
+V_bisa Head 2    = [0.1, 0.5]
+```
+
+Gunakan bobot relevansi Head 2:
+
+```text
+50.6% × [0.2, 0.8]
++ 18.6% × [0.6, 0.1]
++ 30.7% × [0.1, 0.5]
+≈ [0.24, 0.58]
+```
+
+Hasil setiap head:
+
+```text
+Output Head 1 = [-0.40, 0.14]
+Output Head 2 = [ 0.24, 0.58]
+```
+
+### 3.6 `o_proj`: menggabungkan semua head
+
+Output kedua head disambungkan, bukan dijumlahkan:
+
+```text
+concat(
+  [-0.40, 0.14],
+  [ 0.24, 0.58]
+)
+
+= [-0.40, 0.14, 0.24, 0.58]
+```
+
+Hasil gabungan mempunyai empat dimensi:
+
+```text
+2 head × 2 dimensi setiap head
+= 4 dimensi
+```
+
+Kemudian `o_proj` mencampurkan hasil semua head dan menghasilkan output attention yang kembali berukuran empat dimensi:
+
+```text
+gabungan semua head
+→ o_proj
+→ output attention 4 dimensi
+→ residual
+→ contextual vector baru
+```
+
+Tanpa membahas bobot `W`, perubahan angka di dalam `o_proj` belum dapat dihitung. Hal yang perlu dipahami pada tahap ini adalah alurnya:
+
+```text
+q_proj → membuat Q dari posisi token terakhir
+k_proj → membuat K dari semua token yang boleh dilihat
+Q · K + softmax → menghasilkan bobot relevansi setiap head
+v_proj → membuat V yang membawa informasi setiap token
+bobot relevansi × V → menghasilkan output setiap head
+o_proj → mencampurkan gabungan seluruh head
 ```
 
 ## 4. `lm_head` Memprediksi Token Berikutnya
 
 Contextual vector belum berupa kata. `lm_head` membandingkannya dengan bobot output seluruh token dalam vocabulary.
+
+Bagian ini kembali menggunakan contoh dua dimensi dari Bagian 2 agar perhitungan `lm_head` tetap pendek. Contoh dua head pada Bagian 3 menggunakan empat dimensi dan merupakan contoh terpisah.
 
 Untuk contoh ini, kita hanya menampilkan dua kandidat:
 

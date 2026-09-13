@@ -74,7 +74,7 @@ Token `"bisa"` memiliki embedding awal yang sama pada kedua kalimat:
 "Saya terkena bisa" → "bisa" = [0.0, 1.0]
 ```
 
-Vector mempunyai lebih dari satu dimensi agar model memiliki ruang untuk mempelajari banyak pola. Namun satu dimensi tidak memiliki arti tetap seperti `kemampuan` atau `racun`. Makna muncul dari kombinasi seluruh vector dan bobot model.
+Vector mempunyai lebih dari satu dimensi agar model memiliki ruang untuk mempelajari banyak pola. Namun satu dimensi tidak memiliki arti tetap seperti `kemampuan` atau `racun`. Makna muncul dari kombinasi seluruh vector dan hubungannya dengan vector lain.
 
 ## 2. Attention Membaca Konteks
 
@@ -254,7 +254,7 @@ Inilah fungsi contextual vector: merepresentasikan token terakhir beserta kontek
 
 ## 3. Proses `q_proj`, `k_proj`, `v_proj`, dan `o_proj`
 
-Bagian ini belum membahas matrix bobot `W`. Kita langsung memakai hasil yang keluar dari setiap projection.
+Bagian ini langsung memakai hasil yang keluar dari setiap projection. Cara projection menghasilkan angka akan dibahas pada materi lanjutan.
 
 Gunakan konfigurasi model mainan:
 
@@ -427,6 +427,18 @@ Output Head 1 = [-0.40, 0.14]
 Output Head 2 = [ 0.24, 0.58]
 ```
 
+Saat generation menggunakan KV cache, hasil K dan V setiap token disimpan sementara pada layer masing-masing:
+
+```text
+k_proj → K → masuk KV cache
+v_proj → V → masuk KV cache
+
+q_proj → Q → dipakai untuk langkah saat ini
+o_proj → output attention → diteruskan ke proses berikutnya
+```
+
+Ketika token baru diproses, Query token baru dapat langsung memakai K dan V token-token lama dari KV cache. KV cache hanya mempercepat proses; token dalam context window tetap menjadi sumber konteksnya.
+
 ### 3.6 `o_proj`: menggabungkan semua head
 
 Output kedua head disambungkan, bukan dijumlahkan:
@@ -457,7 +469,7 @@ gabungan semua head
 → contextual vector baru
 ```
 
-Tanpa membahas bobot `W`, perubahan angka di dalam `o_proj` belum dapat dihitung. Hal yang perlu dipahami pada tahap ini adalah alurnya:
+Angka keluaran `o_proj` belum dihitung pada pengantar ini. Hal yang perlu dipahami terlebih dahulu adalah alurnya:
 
 ```text
 q_proj → membuat Q dari posisi token terakhir
@@ -470,15 +482,15 @@ o_proj → mencampurkan gabungan seluruh head
 
 ## 4. `lm_head` Memprediksi Token Berikutnya
 
-Contextual vector belum berupa kata. `lm_head` membandingkannya dengan bobot output seluruh token dalam vocabulary.
+Contextual vector belum berupa kata. `lm_head` membandingkannya dengan vector output seluruh token dalam vocabulary.
 
 Bagian ini kembali menggunakan contoh dua dimensi dari Bagian 2 agar perhitungan `lm_head` tetap pendek. Contoh dua head pada Bagian 3 menggunakan empat dimensi dan merupakan contoh terpisah.
 
 Untuk contoh ini, kita hanya menampilkan dua kandidat:
 
 ```text
-bobot output "berenang" → [ 1.0, 0.0]
-bobot output "ular"     → [-1.0, 0.0]
+vector output "berenang" → [ 1.0, 0.0]
+vector output "ular"     → [-1.0, 0.0]
 ```
 
 ### Setelah `"Saya bisa"`
@@ -668,17 +680,9 @@ Input  : "Saya terkena bisa"
 Target : "ular"
 ```
 
-Jika prediksinya salah, loss dihitung. Backpropagation memperbarui embedding, bobot Transformer, dan `lm_head` agar target yang benar mendapatkan probabilitas lebih tinggi.
+Jika prediksinya salah, proses training memperbaiki kemampuan model agar target yang benar mendapatkan probabilitas lebih tinggi. Detail parameter yang diperbarui belum dibahas pada pengantar ini.
 
-Saat model selesai dilatih:
-
-```text
-Embedding dan bobot model
-→ tersimpan dan tetap di dalam checkpoint
-
-Attention weight dan contextual vector
-→ dihitung sementara untuk setiap input
-```
+Saat inference, Q, K, V, attention weight, dan contextual vector dihitung sementara untuk setiap input.
 
 ## Kesimpulan
 

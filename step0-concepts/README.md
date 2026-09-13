@@ -78,183 +78,54 @@ Vector mempunyai lebih dari satu dimensi agar model memiliki ruang untuk mempela
 
 ## 2. Attention Membaca Konteks
 
-Embedding awal `"bisa"` sama, tetapi konteks sebelumnya berbeda.
+Embedding awal token `"bisa"` tetap sama, tetapi context window yang berbeda akan menghasilkan contextual vector yang berbeda.
 
-### Apa yang Dimaksud Token Terakhir?
-
-Token terakhir adalah token paling akhir yang saat ini ada di context window. Contoh:
+Token terakhir adalah token paling akhir yang saat ini berada di context window:
 
 ```text
 Context window: "Saya terkena bisa"
-
-"Saya"    → token pertama
-"terkena" → token kedua
-"bisa"    → token terakhir
-```
-
-Pada causal language model, setiap posisi hanya dapat melihat token sebelumnya dan dirinya sendiri. Untuk memprediksi **satu token setelah prompt**, model menggunakan contextual vector pada posisi token terakhir:
-
-```text
-"Saya terkena bisa"
-                 ↑
-            token terakhir
-                 ↓
-contextual vector posisi "bisa"
-                 ↓
-lm_head memprediksi token berikutnya, misalnya "ular"
-```
-
-Setelah token `"ular"` dipilih dan ditambahkan ke context window, `"ular"` menjadi token terakhir yang baru.
-
-Untuk memprediksi token berikutnya, kita fokus pada **posisi token terakhir**. Query dari token terakhir dibandingkan dengan Key milik token itu sendiri dan token-token sebelumnya yang boleh dilihat.
-
-```text
 Token terakhir: "bisa"
-  ↓
-Q_"bisa" dibandingkan dengan Key token-token sebelumnya
-  ↓
-Attention weight
-  ↓
-Contextual vector posisi terakhir
-  ↓
-lm_head memprediksi token berikutnya
 ```
 
-Transformer sebenarnya menghitung attention untuk setiap posisi token. Namun untuk menghasilkan satu token baru setelah prompt, model menggunakan contextual vector dari posisi terakhir.
+Untuk memprediksi satu token setelah prompt, model berfokus pada contextual vector di posisi token terakhir. Token terakhir dapat memperhatikan dirinya sendiri dan token-token sebelumnya yang masih berada dalam context window.
 
 ```text
 "Saya bisa"
-→ token terakhir dapat melihat "Saya" dan "bisa"
+→ posisi "bisa" melihat "Saya" dan "bisa"
 
 "Saya terkena bisa"
-→ token terakhir dapat melihat "Saya", "terkena", dan "bisa"
+→ posisi "bisa" melihat "Saya", "terkena", dan "bisa"
 ```
 
-Attention memberikan bobot relevansi kepada token-token tersebut.
-
-### Cara Bobot Relevansi Membentuk Contextual Vector
-
-Untuk pemahaman dasar, contextual vector dapat dibayangkan dengan rumus:
+Ringkasan prosesnya:
 
 ```text
-contextual vector
-= jumlah dari (bobot relevansi × vector setiap token)
+Token terakhir "bisa"
+→ Query "bisa" dibandingkan dengan Key setiap token konteks
+→ menghasilkan bobot relevansi setiap token
+→ bobot relevansi mencampurkan Value setiap token
+→ semua head digabungkan
+→ contextual vector baru pada posisi "bisa"
+→ lm_head memprediksi token berikutnya
 ```
 
-Pada model mainan di pengantar ini, `vector setiap token` menggunakan embedding vector awal. Ini adalah penyederhanaan agar hubungan antara bobot relevansi dan contextual vector mudah dipahami.
-
-Jika konteks berisi tiga token:
+Karena konteksnya berbeda, hasilnya juga dapat berbeda:
 
 ```text
+"Saya bisa"
+→ contextual vector membawa pola kemampuan
+→ next token dapat berupa "berenang"
+
 "Saya terkena bisa"
+→ contextual vector membawa pola racun
+→ next token dapat berupa "ular"
 ```
 
-maka bentuk sederhananya:
-
-```text
-contextual vector =
-(relevansi "Saya"    × vector "Saya")
-+
-(relevansi "terkena" × vector "terkena")
-+
-(relevansi "bisa"    × vector "bisa")
-```
-
-Bobot relevansi adalah satu angka, sedangkan vector token mempunyai beberapa dimensi. Satu bobot relevansi mengalikan seluruh dimensi vector pasangannya.
-
-Contoh:
-
-```text
-bobot relevansi "terkena" = 0.7
-vector "terkena"          = [-1.0, 0.0]
-```
-
-```text
-0.7 × [-1.0, 0.0]
-= [0.7 × -1.0, 0.7 × 0.0]
-= [-0.7, 0.0]
-```
-
-Setelah setiap vector dikalikan dengan bobot relevansinya, semua hasil dijumlahkan per dimensi. Hasil penjumlahan itulah contextual vector sederhana untuk posisi token yang sedang diproses.
-
-```text
-Bobot relevansi
-↓ mengatur besar pengaruh setiap token
-Vector token
-↓ membawa informasi numerik token
-Perkalian dan penjumlahan
-↓
-Contextual vector
-```
-
-### Konteks `"Saya bisa"`
-
-Anggap attention menghasilkan:
-
-```text
-"Saya" → 70%
-"bisa" → 30%
-```
-
-Untuk contoh sederhana ini, contextual vector dihitung dengan mencampurkan vector:
-
-```text
-h₁ = 0.7 × [1.0, 0.0] + 0.3 × [0.0, 1.0]
-```
-
-```text
-h₁ = [
-  (0.7 × 1.0) + (0.3 × 0.0),
-  (0.7 × 0.0) + (0.3 × 1.0)
-]
-```
-
-```text
-h₁ = [0.7, 0.3]
-```
-
-### Konteks `"Saya terkena bisa"`
-
-Anggap attention menghasilkan:
-
-```text
-"Saya"    → 10%
-"terkena" → 70%
-"bisa"    → 20%
-```
-
-Contextual vector-nya:
-
-```text
-h₂ =
-0.1 × [ 1.0, 0.0]
-+ 0.7 × [-1.0, 0.0]
-+ 0.2 × [ 0.0, 1.0]
-```
-
-```text
-h₂ = [
-  (0.1 × 1.0) + (0.7 × -1.0) + (0.2 × 0.0),
-  (0.1 × 0.0) + (0.7 ×  0.0) + (0.2 × 1.0)
-]
-```
-
-```text
-h₂ = [-0.6, 0.2]
-```
-
-Hasilnya:
-
-```text
-"Saya bisa"         → contextual vector [ 0.7, 0.3]
-"Saya terkena bisa" → contextual vector [-0.6, 0.2]
-```
-
-Inilah fungsi contextual vector: merepresentasikan token terakhir beserta konteks yang sudah dibacanya.
+Perhitungan Q, K, V, setiap head, dan O dijelaskan pada Section 3.
 
 ## 3. Proses `q_proj`, `k_proj`, `v_proj`, dan `o_proj`
 
-Bagian ini langsung memakai hasil yang keluar dari setiap projection. Cara projection menghasilkan angka akan dibahas pada materi lanjutan.
+Setiap projection menggunakan bobot yang sudah tersimpan di base model. Pada bagian Q, bobot tersebut disebut `Wq`. Kita hanya membahas asal Q total terlebih dahulu; bobot K, V, dan O dapat dipelajari setelah alur dasarnya dipahami.
 
 Gunakan konfigurasi model mainan:
 
@@ -271,6 +142,32 @@ Total dimensi       = 4
 Untuk memprediksi token setelah prompt, Query yang menjadi fokus berasal dari posisi token terakhir `"bisa"`:
 
 ```text
+vector token "bisa"
+→ dikalikan dengan bobot Wq milik q_proj
+→ menghasilkan Q_bisa total
+```
+
+Secara singkat:
+
+```text
+Q_bisa total = hidden_bisa × Wq
+```
+
+Pada Layer pertama, `hidden_bisa` berasal dari embedding vector token `"bisa"` yang tersimpan di base model. Pada layer berikutnya, `hidden_bisa` berasal dari contextual vector hasil layer sebelumnya.
+
+Jika total dimensinya empat:
+
+```text
+hidden_bisa [1 × 4]
+× Wq       [4 × 4]
+→ Q_bisa   [1 × 4]
+```
+
+Jadi `Q_bisa total` mempunyai empat dimensi karena merupakan hasil perkalian vector token dengan `Wq`, bukan karena Head 1 atau Head 2 membuat angka acak baru.
+
+Misalkan hasil perkalian tersebut adalah:
+
+```text
 Q_bisa total = [1.0, 0.0, 0.0, 1.0]
 ```
 
@@ -282,6 +179,17 @@ Q_bisa Head 2 = [0.0, 1.0]
 ```
 
 Kedua Query berasal dari token `"bisa"` yang sama. Setiap head hanya memprosesnya melalui bagian vector yang berbeda.
+
+Urutan lengkapnya:
+
+```text
+hidden_bisa dari base model/layer sebelumnya
+→ q_proj memakai Wq
+→ Q_bisa total [1.0, 0.0, 0.0, 1.0]
+→ dibagi menjadi dua head
+→ Head 1 [1.0, 0.0]
+→ Head 2 [0.0, 1.0]
+```
 
 ### 3.2 `k_proj`: membuat Key untuk semua token
 

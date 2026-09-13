@@ -4,17 +4,11 @@ Step ini menjelaskan satu pertanyaan utama:
 
 > Mengapa model dapat melanjutkan `"Saya bisa ..."` dengan `"berenang"`, tetapi melanjutkan `"Saya terkena bisa ..."` dengan `"ular"`?
 
-Dokumen ini menggunakan dua model mainan:
-
-```text
-Contoh 2 dimensi
-→ untuk menjelaskan embedding dan lm_head
-
-Contoh 4 dimensi dengan 2 head
-→ untuk menjelaskan q_proj, k_proj, v_proj, dan o_proj
-```
+Dokumen ini menggunakan satu model mainan dengan empat dimensi dan dua head. Dengan begitu, contoh dari `q_proj` sampai `lm_head` tetap berada dalam satu alur yang sama.
 
 Semua angka hanya ilustrasi agar perhitungannya mudah dilihat, bukan nilai asli dari model tertentu.
+
+Nilai bobot seperti `Wq`, `Wk`, `Wv`, `Wo`, `W_up`, dan `W_down` belum dijelaskan di awal agar alurnya tetap sederhana. Asal nilai bobot tersebut dibahas pada Section 6, setelah alur prediksi token selesai.
 
 ## Gambaran Besar
 
@@ -458,17 +452,111 @@ Hasil gabungan mempunyai empat dimensi:
 = 4 dimensi
 ```
 
-Kemudian `o_proj` mencampurkan hasil semua head dan menghasilkan output attention yang kembali berukuran empat dimensi. Residual menambahkan output tersebut ke hidden vector sebelumnya:
+Kemudian `o_proj` mencampurkan hasil semua head dan menghasilkan output attention yang kembali berukuran empat dimensi. Misalkan hasilnya adalah:
 
 ```text
 gabungan semua head
 → o_proj
-→ output attention 4 dimensi
-→ residual
-→ contextual vector baru
+→ output attention = [-0.40, 0.14, 0.24, 0.58]
 ```
 
-Angka keluaran `o_proj` belum dihitung pada Pengantar ini. Fokusnya adalah memahami urutan proses:
+Output `o_proj` belum menjadi kata dan belum langsung masuk ke `lm_head`. Ia ditambahkan ke hidden vector lama agar menjadi contextual vector **setelah attention**. Setelah itu, MLP dan residual kedua menghasilkan contextual vector baru / output penuh layer:
+
+```text
+hidden_bisa sebelum attention
+= [0.50, 0.50, 0.00, 0.50]
+
+output o_proj
+= [-0.40, 0.14, 0.24, 0.58]
+
+hidden setelah attention
+= hidden lama + output o_proj
+= [0.10, 0.64, 0.24, 1.08]
+```
+
+Vector `[0.10, 0.64, 0.24, 1.08]` belum menjadi output penuh layer. Ia masuk ke MLP untuk mendapatkan perubahan tambahan.
+
+Untuk contoh kecil ini, misalkan MLP memakai matrix berikut. Ukurannya `4 × 2` lalu `2 × 4` hanya agar hitungannya pendek; model nyata biasanya memperbesar dimensi tengah.
+
+```text
+W_up =
+[
+  [1.0, 0.0],
+  [0.0, 1.0],
+  [1.0, 0.0],
+  [0.0, 1.0]
+]
+
+W_down =
+[
+  [0.1, 0.0, 0.2,  0.0],
+  [0.0, 0.1, 0.0, -0.1]
+]
+```
+
+MLP menghitung:
+
+```text
+z1 = x × W_up
+   = [0.10, 0.64, 0.24, 1.08] × W_up
+   = [0.34, 1.72]
+
+z2 = activation(z1)
+   = [0.34, 1.72]
+
+output_MLP = z2 × W_down
+           = [0.034, 0.172, 0.068, -0.172]
+```
+
+Pada contoh ini `x` berarti hidden setelah attention. Fungsi `activation` tidak mengubah `z1` karena kedua nilainya positif. Pada model nyata, fungsi tersebut penting untuk mempelajari pola yang lebih kompleks.
+
+Residual kedua menambahkan output MLP ke `x`:
+
+```text
+contextual vector baru
+= x + output_MLP
+= [0.10, 0.64, 0.24, 1.08]
++ [0.034, 0.172, 0.068, -0.172]
+= [0.134, 0.812, 0.308, 0.908]
+```
+
+Jadi perhitungan output penuh satu layer adalah:
+
+```text
+x = hidden_lama + output_o_proj       ← residual attention
+contextual_vector_baru = x + output_MLP  ← residual MLP
+```
+
+Contextual vector baru `[0.134, 0.812, 0.308, 0.908]` menjadi `hidden_lama` untuk layer 2. Layer 2 melakukan proses yang sama dan menghasilkan vector baru lagi. Begitu seterusnya.
+
+```text
+o_proj layer 1
+        ↓
+contextual vector layer 1
+        ↓ menjadi hidden_lama layer 2
+
+o_proj layer 2
+        ↓
+contextual vector layer 2
+        ↓ menjadi hidden_lama layer 3
+
+... layer terakhir
+        ↓
+contextual vector akhir = h
+        ↓
+lm_head
+```
+
+Jika ini adalah layer terakhir, outputnya disebut **contextual vector akhir** atau `h`:
+
+```text
+output layer terakhir
+= h = [0.134, 0.812, 0.308, 0.908]
+        ↓
+lm_head
+```
+
+Ringkasan urutannya:
 
 ```text
 q_proj → membuat Q dari posisi token terakhir
@@ -477,81 +565,54 @@ Q · K + softmax → menghasilkan persentase relevansi setiap token
 v_proj → membuat V yang membawa informasi setiap token
 bobot relevansi × V → menghasilkan output setiap head
 o_proj → mencampurkan gabungan seluruh head
+output o_proj + hidden lama → hidden setelah attention
+hidden setelah attention × W_up → activation → × W_down → output_MLP
+hidden setelah attention + output_MLP → contextual vector baru untuk layer berikutnya
+output layer terakhir → contextual vector akhir `h` → lm_head
 ```
 
 ## 4. `lm_head` Memprediksi Token Berikutnya
 
-Contextual vector belum berupa kata. `lm_head` membandingkannya dengan vector output seluruh token dalam vocabulary.
+Contextual vector akhir belum berupa kata. `lm_head` membandingkan `h` dengan vector output seluruh token dalam vocabulary.
 
-Bagian ini menggunakan contoh baru dengan dua dimensi agar perhitungan `lm_head` tetap pendek. Contoh ini terpisah dari contoh dua head dengan empat dimensi pada Section 3.
-
-Misalkan Transformer telah menghasilkan contextual vector akhir pada posisi token terakhir:
+Lanjutkan contoh yang sama dari Section 3:
 
 ```text
-"Saya bisa"         → h₁ = [ 0.7, 0.3]
-"Saya terkena bisa" → h₂ = [-0.6, 0.2]
+contextual vector akhir pada token "bisa"
+h = [0.134, 0.812, 0.308, 0.908]
 ```
 
-Untuk contoh ini, kita hanya menampilkan dua kandidat:
+Untuk mempermudah, tampilkan dua kandidat token dengan empat dimensi:
 
 ```text
-vector output "berenang" → [ 1.0, 0.0]
-vector output "ular"     → [-1.0, 0.0]
+vector output "berenang" = [ 0.50, 0.10, 0.10, -0.10]
+vector output "ular"     = [-0.30, 0.70, 0.10,  0.20]
 ```
 
-### Setelah `"Saya bisa"`
+`lm_head` menghitung skor kecocokan dengan perkalian titik seluruh dimensi:
 
 ```text
 skor "berenang"
-= [0.7, 0.3] · [1.0, 0.0]
-= 0.7
+= [0.134, 0.812, 0.308, 0.908] · [0.50, 0.10, 0.10, -0.10]
+= (0.134 × 0.50) + (0.812 × 0.10) + (0.308 × 0.10) + (0.908 × -0.10)
+= 0.09
 ```
 
 ```text
 skor "ular"
-= [0.7, 0.3] · [-1.0, 0.0]
-= -0.7
+= [0.134, 0.812, 0.308, 0.908] · [-0.30, 0.70, 0.10, 0.20]
+= (0.134 × -0.30) + (0.812 × 0.70) + (0.308 × 0.10) + (0.908 × 0.20)
+= 0.74
 ```
 
-Hasil:
+Hasilnya:
 
 ```text
-"berenang" →  0.7  # lebih tinggi
-"ular"     → -0.7
+"berenang" → 0.09
+"ular"     → 0.74  # skor lebih tinggi
 ```
 
-Model lebih mungkin menghasilkan:
-
-```text
-"Saya bisa berenang"
-```
-
-### Setelah `"Saya terkena bisa"`
-
-```text
-skor "berenang"
-= [-0.6, 0.2] · [1.0, 0.0]
-= -0.6
-```
-
-```text
-skor "ular"
-= [-0.6, 0.2] · [-1.0, 0.0]
-= 0.6
-```
-
-Hasil:
-
-```text
-"berenang" → -0.6
-"ular"     →  0.6  # lebih tinggi
-```
-
-Model lebih mungkin menghasilkan:
-
-```text
-"Saya terkena bisa ular"
-```
+Maka untuk konteks contoh `"Saya terkena bisa"`, model lebih mungkin memilih token `"ular"`.
 
 Model nyata menghitung skor untuk seluruh vocabulary, bukan hanya dua token:
 
@@ -680,7 +741,19 @@ Target : "ular"
 
 Jika prediksinya salah, proses training memperbaiki kemampuan model agar target yang benar mendapatkan probabilitas lebih tinggi. Detail parameter yang diperbarui belum dibahas pada pengantar ini.
 
-Saat inference, Q, K, V, bobot relevansi attention, dan contextual vector dihitung sementara untuk setiap input.
+### Dari mana nilai bobot berasal?
+
+Saat model baru dibuat, matrix bobot—termasuk `Wq`, `Wk`, `Wv`, `Wo`, `W_up`, dan `W_down`—diisi angka acak kecil. Saat training, model membuat prediksi, membandingkannya dengan token target, lalu memperbarui angka-angka bobot tersebut sedikit demi sedikit agar prediksi berikutnya lebih baik.
+
+```text
+angka acak kecil
+→ training berkali-kali
+→ bobot mempelajari pola dari data latih
+→ bobot tersimpan dalam checkpoint / base model
+```
+
+Ketika inference (model sedang menjawab), bobot tersebut tidak berubah. Yang berubah mengikuti prompt adalah Q, K, V, bobot relevansi attention, dan contextual vector.
+
 
 ## Kesimpulan
 

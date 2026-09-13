@@ -589,6 +589,21 @@ vector output "berenang" = [ 0.50, 0.10, 0.10, -0.10]
 vector output "ular"     = [-0.30, 0.70, 0.10,  0.20]
 ```
 
+Kedua vector di atas adalah **vector output `lm_head` milik model**. Model mempunyai satu vector seperti ini untuk setiap token dalam vocabulary. Nilainya dipelajari saat training dan tersimpan di checkpoint/base model; nilainya tidak dibuat acak lagi ketika model sedang menjawab.
+
+Perannya berbeda dari embedding input:
+
+```text
+embedding input
+→ mengubah token prompt menjadi vector awal
+
+vector output lm_head
+→ menjadi kandidat yang dibandingkan dengan contextual vector akhir
+→ menghasilkan skor token berikutnya
+```
+
+Pada beberapa model, embedding input dan bobot `lm_head` dapat memakai matrix yang sama. Namun pada penjelasan ini, keduanya dianggap terpisah agar perannya mudah dibedakan.
+
 `lm_head` menghitung skor kecocokan dengan perkalian titik seluruh dimensi:
 
 ```text

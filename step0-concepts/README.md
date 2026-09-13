@@ -758,16 +758,24 @@ Jika prediksinya salah, proses training memperbaiki kemampuan model agar target 
 
 ### Dari mana nilai bobot berasal?
 
-Saat model baru dibuat, matrix bobot—termasuk `Wq`, `Wk`, `Wv`, `Wo`, `W_up`, dan `W_down`—diisi angka acak kecil. Saat training, model membuat prediksi, membandingkannya dengan token target, lalu memperbarui angka-angka bobot tersebut sedikit demi sedikit agar prediksi berikutnya lebih baik.
+Saat model baru dibuat, matrix bobot—termasuk `Wq`, `Wk`, `Wv`, `Wo`, `W_up`, dan `W_down`—sudah dibuat dan diisi angka acak kecil. Pada tahap training awal (*pretraining*), model membuat prediksi, membandingkannya dengan token target, lalu memperbarui angka-angka bobot tersebut sedikit demi sedikit agar prediksi berikutnya lebih baik.
 
 ```text
 angka acak kecil
-→ training berkali-kali
+→ training awal berkali-kali
 → bobot mempelajari pola dari data latih
 → bobot tersimpan dalam checkpoint / base model
 ```
 
-Ketika inference (model sedang menjawab), bobot tersebut tidak berubah. Yang berubah mengikuti prompt adalah Q, K, V, bobot relevansi attention, dan contextual vector.
+Setelah training selesai, bobot tersebut dipakai ulang saat inference (model sedang menjawab). Misalnya, `W_up` dan `W_down` dipakai untuk mengolah hidden vector pada setiap layer, tetapi nilai bobotnya tidak berubah ketika model menjawab.
+
+```text
+hidden vector saat ini
+× W_up dan W_down hasil training
+→ contextual vector baru
+```
+
+Yang berubah mengikuti prompt adalah Q, K, V, bobot relevansi attention, dan contextual vector—bukan bobot modelnya.
 
 
 ## Kesimpulan

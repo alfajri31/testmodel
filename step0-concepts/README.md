@@ -356,7 +356,106 @@ probabilitas setiap token
 satu token berikutnya
 ```
 
-## 5. Mengapa Model Bisa Melakukan Ini?
+## 5. Bagaimana Satu Token Menjadi Rangkaian Kalimat?
+
+`lm_head` hanya memilih **satu token berikutnya**, bukan langsung membuat satu kalimat lengkap.
+
+Contoh awal:
+
+```text
+Input: "Saya terkena bisa"
+```
+
+Misalkan token dengan skor/probabilitas kuat adalah `"ular"`:
+
+```text
+"Saya terkena bisa"
+        ↓ lm_head
+"ular"
+```
+
+Token `"ular"` kemudian ditambahkan ke context window:
+
+```text
+"Saya terkena bisa ular"
+```
+
+Sekarang token terakhir berubah menjadi `"ular"`. Model memproses konteks terbaru untuk memprediksi satu token lagi:
+
+```text
+"Saya terkena bisa ular"
+        ↓ Transformer + lm_head
+"."
+```
+
+Prosesnya diulang:
+
+```text
+konteks saat ini
+→ contextual vector posisi terakhir
+→ lm_head menghitung kandidat seluruh vocabulary
+→ satu token dipilih
+→ token ditambahkan ke konteks
+→ ulangi
+```
+
+Jadi rangkaian kalimat terbentuk token demi token:
+
+```text
+"Saya terkena bisa"
+→ "ular"
+→ "."
+→ token berikutnya
+```
+
+Kemampuan menyusun kata agar terasa natural berasal dari pola bahasa yang dipelajari base model saat training:
+
+```text
+pola kata yang sering cocok berdampingan
+→ pola frasa
+→ tata bahasa
+→ struktur kalimat dan paragraf
+```
+
+Model tidak harus menemukan satu kalimat utuh yang sama persis di data latih. Ia dapat menyusun kalimat baru dari banyak pola kecil yang dipelajari.
+
+### Greedy decoding dan sampling
+
+Setelah `lm_head`, model mempunyai probabilitas beberapa kandidat token:
+
+```text
+"Berikut" → 60%
+"Untuk"   → 30%
+"Secara"  → 10%
+```
+
+Ada dua cara umum untuk memilih token:
+
+```text
+Greedy decoding
+→ selalu memilih probabilitas tertinggi
+→ contoh: selalu memilih "Berikut"
+→ hasil lebih konsisten, tetapi dapat monoton
+
+Sampling
+→ memilih secara acak berbobot probabilitas
+→ "Berikut" paling sering dipilih, tetapi "Untuk" kadang dapat dipilih
+→ hasil lebih bervariasi
+```
+
+Sampling bukan acak bebas. Token dengan probabilitas tinggi tetap jauh lebih mungkin muncul daripada token dengan probabilitas rendah.
+
+```text
+probabilitas tinggi
+→ peluang lebih tinggi untuk dipilih
+
+probabilitas rendah
+→ masih mungkin dipilih jika tidak dibatasi oleh top-k/top-p
+```
+
+Pengaturan seperti `temperature`, `top-k`, dan `top-p` menentukan seberapa bervariasi pilihan tersebut. Untuk keluaran ketat seperti klasifikasi, JSON, atau format operasional, greedy decoding atau temperature sangat rendah biasanya lebih sesuai.
+
+## 6. Mengapa Model Bisa Melakukan Ini?
 
 Saat training, model melihat banyak pola bahasa dan mencoba memprediksi token berikutnya:
 
@@ -406,6 +505,17 @@ Attention
 lm_head
 → menggunakan contextual vector terakhir
 → menghasilkan skor kandidat token berikutnya
+```
+
+Rangkaian kalimat terbentuk karena proses prediksi satu token diulang:
+
+```text
+contextual vector terakhir
+→ lm_head
+→ pilih satu token
+→ token masuk ke context window
+→ contextual vector baru
+→ lm_head lagi
 ```
 
 Hal penting yang perlu diingat:

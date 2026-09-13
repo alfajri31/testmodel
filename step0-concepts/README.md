@@ -765,6 +765,30 @@ Target : "ular"
 
 Jika prediksinya salah, proses training memperbaiki kemampuan model agar target yang benar mendapatkan probabilitas lebih tinggi. Detail parameter yang diperbarui belum dibahas pada pengantar ini.
 
+### Context window: ingatan kerja sementara
+
+Selama percakapan berlangsung, token baru ditambahkan ke context window. Model lalu menghitung contextual vector baru agar jawaban berikutnya dapat mempertimbangkan percakapan sebelumnya.
+
+```text
+percakapan bertambah
+→ token context window bertambah
+→ contextual vector diperbarui
+→ jawaban dapat memakai informasi chat sebelumnya
+```
+
+Ini adalah **ingatan kerja sementara**, bukan pengetahuan baru yang permanen di base model. Pada inference, bobot model tidak berubah. Yang berubah adalah konteks dan vector sementara untuk percakapan saat ini.
+
+Context window yang lebih panjang juga biasanya membutuhkan lebih banyak memori kerja, termasuk KV cache. Karena itu, ketika chat di-*clear*:
+
+```text
+context window lama dihapus
+→ KV cache lama tidak dipakai lagi
+→ penggunaan memori kerja berkurang
+→ proses jawaban berikutnya biasanya lebih ringan
+```
+
+Base model tetap sama. Yang dibersihkan adalah konteks percakapan sementara, bukan bobot atau pengetahuan permanen model.
+
 ### Dari mana nilai bobot berasal?
 
 Saat model baru dibuat, matrix bobot—termasuk `Wq`, `Wk`, `Wv`, `Wo`, `W_up`, dan `W_down`—sudah dibuat dan diisi angka acak kecil. Pada tahap training awal (*pretraining*), model membuat prediksi, membandingkannya dengan token target, lalu memperbarui angka-angka bobot tersebut sedikit demi sedikit agar prediksi berikutnya lebih baik.

@@ -42,6 +42,31 @@ embedding_table[25] → [-1.0, 0.0]  # "terkena"
 embedding_table[31] → [ 0.0, 1.0]  # "bisa"
 ```
 
+Angka `[1.0, 0.0]`, `[-1.0, 0.0]`, dan `[0.0, 1.0]` adalah angka **ilustrasi**, bukan nilai embedding asli dari model nyata. Angka ini dipilih agar titik vector mudah digambar dan perhitungan attention mudah diikuti.
+
+Pada model nyata, prosesnya seperti ini:
+
+```text
+Model baru dibuat
+→ embedding table diisi angka acak kecil
+
+Training
+→ loss, backpropagation, dan optimizer memperbarui angka tersebut
+
+Model pretrained
+→ embedding vector hasil training disimpan di checkpoint
+```
+
+Jadi ketika inference, model tidak membuat embedding token secara acak lagi. Token ID mengambil vector yang sudah tersimpan:
+
+```text
+token ID "Saya"
+→ embedding_table[token_ID]
+→ misalnya [0.012, -0.043, 0.071, ..., 0.020]
+```
+
+Model nyata biasanya menggunakan ratusan atau ribuan dimensi. Contoh dua dimensi pada pengantar ini hanya menyederhanakan cara kerja.
+
 Token `"bisa"` memiliki embedding awal yang sama pada kedua kalimat:
 
 ```text

@@ -167,7 +167,61 @@ Q_bisa total = hidden_bisa × Wq
 
 Pada Layer pertama, `hidden_bisa` berawal dari embedding vector token `"bisa"` yang diambil dari embedding table base model. Pada layer berikutnya, `hidden_bisa` adalah hasil pemrosesan layer sebelumnya.
 
-Jika total dimensinya empat:
+Untuk contoh empat dimensi ini, misalkan hidden vector pada posisi `"bisa"` adalah:
+
+```text
+hidden_bisa = [0.5, 0.5, 0.0, 0.5]
+```
+
+Nilai tersebut adalah contoh input ke `q_proj`. Pada Layer pertama, nilainya berasal dari representasi embedding token beserta pemrosesan awal model. Pada layer berikutnya, nilainya berasal dari output layer sebelumnya.
+
+Misalkan `q_proj` pada layer ini mempunyai matrix:
+
+```text
+Wq =
+[
+  [1.0,  1.0, 0.0, 0.0],
+  [0.0, -1.0, 0.0, 1.0],
+  [0.0,  0.0, 1.0, 0.0],
+  [1.0,  0.0, 0.0, 1.0]
+]
+```
+
+Perkaliannya:
+
+```text
+Q_bisa total
+= [0.5, 0.5, 0.0, 0.5] × Wq
+```
+
+Hitung setiap koordinat hasil:
+
+```text
+koordinat 1
+= (0.5 × 1.0) + (0.5 × 0.0) + (0.0 × 0.0) + (0.5 × 1.0)
+= 1.0
+
+koordinat 2
+= (0.5 × 1.0) + (0.5 × -1.0) + (0.0 × 0.0) + (0.5 × 0.0)
+= 0.0
+
+koordinat 3
+= (0.5 × 0.0) + (0.5 × 0.0) + (0.0 × 1.0) + (0.5 × 0.0)
+= 0.0
+
+koordinat 4
+= (0.5 × 0.0) + (0.5 × 1.0) + (0.0 × 0.0) + (0.5 × 1.0)
+= 1.0
+```
+
+Maka:
+
+```text
+hidden_bisa × Wq
+→ Q_bisa total = [1.0, 0.0, 0.0, 1.0]
+```
+
+Ukuran perkaliannya adalah:
 
 ```text
 hidden_bisa [1 × 4]
@@ -175,13 +229,7 @@ hidden_bisa [1 × 4]
 → Q_bisa   [1 × 4]
 ```
 
-Jadi `Q_bisa total` mempunyai empat dimensi karena merupakan hasil perkalian vector token dengan `Wq`, bukan karena Head 1 atau Head 2 membuat angka acak baru.
-
-Misalkan hasil perkalian tersebut adalah:
-
-```text
-Q_bisa total = [1.0, 0.0, 0.0, 1.0]
-```
+Jadi `Q_bisa total` mempunyai empat dimensi karena merupakan hasil perkalian hidden vector dengan `Wq`, bukan karena Head 1 atau Head 2 membuat angka acak baru.
 
 Q tersebut dibagi untuk dua head:
 

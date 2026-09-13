@@ -569,6 +569,20 @@ contextual vector terakhir
 → lm_head lagi
 ```
 
+Cara paling sederhana untuk menyimpulkannya:
+
+> Next token adalah hasil pemrosesan context window sebelumnya. Model seperti sangat hati-hati memilih kata: attention menentukan token konteks yang paling relevan, Transformer membentuk contextual vector, lalu `lm_head` memilih kandidat token yang paling cocok atau mengambil sampel berbobot probabilitas.
+
+Tidak semua token dalam context window selalu memiliki pengaruh yang sama:
+
+```text
+context window
+→ attention memberi bobot relevansi berbeda
+→ token yang lebih relevan memberi pengaruh lebih besar
+→ contextual vector terakhir
+→ prediksi next token
+```
+
 Hal penting yang perlu diingat:
 
 - Embedding awal token yang sama tetap sama dalam checkpoint yang sama.

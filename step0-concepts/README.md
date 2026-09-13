@@ -4,7 +4,17 @@ Step ini menjelaskan satu pertanyaan utama:
 
 > Mengapa model dapat melanjutkan `"Saya bisa ..."` dengan `"berenang"`, tetapi melanjutkan `"Saya terkena bisa ..."` dengan `"ular"`?
 
-Kita memakai model mainan dengan vector dua dimensi. Semua angka hanya contoh agar perhitungannya mudah dilihat.
+Dokumen ini menggunakan dua model mainan:
+
+```text
+Contoh 2 dimensi
+→ untuk menjelaskan embedding dan lm_head
+
+Contoh 4 dimensi dengan 2 head
+→ untuk menjelaskan q_proj, k_proj, v_proj, dan o_proj
+```
+
+Semua angka hanya ilustrasi agar perhitungannya mudah dilihat, bukan nilai asli dari model tertentu.
 
 ## Gambaran Besar
 
@@ -15,13 +25,15 @@ Token ID
   ↓
 Embedding awal setiap token
   ↓
-Attention membaca konteks
+Setiap Transformer layer memproses Q, K, V, dan O
   ↓
-Contextual vector
+Contextual vector akhir pada posisi token terakhir
   ↓
 lm_head menghitung skor seluruh vocabulary
   ↓
 Token berikutnya dipilih
+  ↓
+Token ditambahkan ke context window dan proses diulang
 ```
 
 ## 1. Token Menjadi Embedding
@@ -121,11 +133,11 @@ Karena konteksnya berbeda, hasilnya juga dapat berbeda:
 → next token dapat berupa "ular"
 ```
 
-Perhitungan Q, K, V, setiap head, dan O dijelaskan pada Section 3.
+Section 2 hanya memberikan gambaran besar. Perhitungan Q, K, V, setiap head, dan O dijelaskan secara berurutan pada Section 3.
 
 ## 3. Proses `q_proj`, `k_proj`, `v_proj`, dan `o_proj`
 
-Setiap projection menggunakan bobot yang sudah tersimpan di base model. Pada bagian Q, bobot tersebut disebut `Wq`. Kita hanya membahas asal Q total terlebih dahulu; bobot K, V, dan O dapat dipelajari setelah alur dasarnya dipahami.
+Setiap projection menggunakan parameter yang sudah tersimpan di base model. Pada bagian Q, kita hanya memperlihatkan `Wq` untuk menjelaskan dari mana Q total berasal. Detail parameter projection lainnya dapat dipelajari setelah alur dasarnya dipahami.
 
 Gunakan konfigurasi model mainan:
 
@@ -153,7 +165,7 @@ Secara singkat:
 Q_bisa total = hidden_bisa × Wq
 ```
 
-Pada Layer pertama, `hidden_bisa` berasal dari embedding vector token `"bisa"` yang tersimpan di base model. Pada layer berikutnya, `hidden_bisa` berasal dari contextual vector hasil layer sebelumnya.
+Pada Layer pertama, `hidden_bisa` berawal dari embedding vector token `"bisa"` yang diambil dari embedding table base model. Pada layer berikutnya, `hidden_bisa` adalah hasil pemrosesan layer sebelumnya.
 
 Jika total dimensinya empat:
 
@@ -183,7 +195,7 @@ Kedua Query berasal dari token `"bisa"` yang sama. Setiap head hanya memprosesny
 Urutan lengkapnya:
 
 ```text
-hidden_bisa dari base model/layer sebelumnya
+hidden_bisa dari embedding/layer sebelumnya
 → q_proj memakai Wq
 → Q_bisa total [1.0, 0.0, 0.0, 1.0]
 → dibagi menjadi dua head
@@ -305,9 +317,9 @@ bisa    → sekitar 30.7%
 
 Head 2 paling memperhatikan `"Saya"`. Dengan demikian, dua head dapat menghasilkan pola relevansi berbeda untuk context window yang sama.
 
-### 3.5 `v_proj`: membuat Value dan mencampurkan informasi
+### 3.5 `v_proj`: membuat Value lalu mencampurkan informasi
 
-Misalkan `v_proj` menghasilkan Value berikut.
+Misalkan `v_proj` menghasilkan Value berikut. Angkanya adalah ilustrasi hasil projection, bukan vector yang dibuat acak saat inference.
 
 Fokus kegunaan V pada tahap ini:
 
@@ -396,7 +408,7 @@ Hasil gabungan mempunyai empat dimensi:
 = 4 dimensi
 ```
 
-Kemudian `o_proj` mencampurkan hasil semua head dan menghasilkan output attention yang kembali berukuran empat dimensi:
+Kemudian `o_proj` mencampurkan hasil semua head dan menghasilkan output attention yang kembali berukuran empat dimensi. Residual menambahkan output tersebut ke hidden vector sebelumnya:
 
 ```text
 gabungan semua head
@@ -406,7 +418,7 @@ gabungan semua head
 → contextual vector baru
 ```
 
-Angka keluaran `o_proj` belum dihitung pada pengantar ini. Hal yang perlu dipahami terlebih dahulu adalah alurnya:
+Angka keluaran `o_proj` belum dihitung pada Pengantar ini. Fokusnya adalah memahami urutan proses:
 
 ```text
 q_proj → membuat Q dari posisi token terakhir
@@ -421,7 +433,14 @@ o_proj → mencampurkan gabungan seluruh head
 
 Contextual vector belum berupa kata. `lm_head` membandingkannya dengan vector output seluruh token dalam vocabulary.
 
-Bagian ini kembali menggunakan contoh dua dimensi dari Bagian 2 agar perhitungan `lm_head` tetap pendek. Contoh dua head pada Bagian 3 menggunakan empat dimensi dan merupakan contoh terpisah.
+Bagian ini menggunakan contoh baru dengan dua dimensi agar perhitungan `lm_head` tetap pendek. Contoh ini terpisah dari contoh dua head dengan empat dimensi pada Section 3.
+
+Misalkan Transformer telah menghasilkan contextual vector akhir pada posisi token terakhir:
+
+```text
+"Saya bisa"         → h₁ = [ 0.7, 0.3]
+"Saya terkena bisa" → h₂ = [-0.6, 0.2]
+```
 
 Untuk contoh ini, kita hanya menampilkan dua kandidat:
 
@@ -431,10 +450,6 @@ vector output "ular"     → [-1.0, 0.0]
 ```
 
 ### Setelah `"Saya bisa"`
-
-```text
-h₁ = [0.7, 0.3]
-```
 
 ```text
 skor "berenang"
@@ -462,10 +477,6 @@ Model lebih mungkin menghasilkan:
 ```
 
 ### Setelah `"Saya terkena bisa"`
-
-```text
-h₂ = [-0.6, 0.2]
-```
 
 ```text
 skor "berenang"
@@ -619,7 +630,7 @@ Target : "ular"
 
 Jika prediksinya salah, proses training memperbaiki kemampuan model agar target yang benar mendapatkan probabilitas lebih tinggi. Detail parameter yang diperbarui belum dibahas pada pengantar ini.
 
-Saat inference, Q, K, V, attention weight, dan contextual vector dihitung sementara untuk setiap input.
+Saat inference, Q, K, V, bobot relevansi attention, dan contextual vector dihitung sementara untuk setiap input.
 
 ## Kesimpulan
 
@@ -629,7 +640,7 @@ Token "bisa" sama
 → embedding awal sama
 
 Konteks sebelumnya berbeda
-→ attention weight berbeda
+→ bobot relevansi attention berbeda
 → contextual vector berbeda
 → skor dari lm_head berbeda
 → token berikutnya dapat berbeda

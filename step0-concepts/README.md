@@ -80,6 +80,32 @@ Vector mempunyai lebih dari satu dimensi agar model memiliki ruang untuk mempela
 
 Embedding awal `"bisa"` sama, tetapi konteks sebelumnya berbeda.
 
+### Apa yang Dimaksud Token Terakhir?
+
+Token terakhir adalah token paling akhir yang saat ini ada di context window. Contoh:
+
+```text
+Context window: "Saya terkena bisa"
+
+"Saya"    → token pertama
+"terkena" → token kedua
+"bisa"    → token terakhir
+```
+
+Pada causal language model, setiap posisi hanya dapat melihat token sebelumnya dan dirinya sendiri. Untuk memprediksi **satu token setelah prompt**, model menggunakan contextual vector pada posisi token terakhir:
+
+```text
+"Saya terkena bisa"
+                 ↑
+            token terakhir
+                 ↓
+contextual vector posisi "bisa"
+                 ↓
+lm_head memprediksi token berikutnya, misalnya "ular"
+```
+
+Setelah token `"ular"` dipilih dan ditambahkan ke context window, `"ular"` menjadi token terakhir yang baru.
+
 Untuk memprediksi token berikutnya, kita fokus pada **posisi token terakhir**. Query dari token terakhir dibandingkan dengan Key milik token itu sendiri dan token-token sebelumnya yang boleh dilihat.
 
 ```text

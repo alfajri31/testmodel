@@ -479,6 +479,15 @@ Vector `[0.10, 0.64, 0.24, 1.08]` belum menjadi output penuh layer. Ia masuk ke 
 Untuk contoh kecil ini, misalkan MLP memakai matrix berikut. Ukurannya `4 × 2` lalu `2 × 4` hanya agar hitungannya pendek; model nyata biasanya memperbesar dimensi tengah.
 
 ```text
+W_up
+→ mengubah 4 dimensi ke ruang MLP 2 dimensi pada contoh ini
+
+W_down
+→ mengembalikan hasil MLP dari 2 dimensi menjadi 4 dimensi
+→ agar hasilnya dapat ditambahkan kembali ke x yang juga 4 dimensi
+```
+
+```text
 W_up =
 [
   [1.0, 0.0],

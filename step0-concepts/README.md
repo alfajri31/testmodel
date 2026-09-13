@@ -287,6 +287,21 @@ Kedua Query berasal dari token `"bisa"` yang sama. Setiap head hanya memprosesny
 
 Setiap token yang dapat dilihat menyediakan Key pada setiap head.
 
+Fokus kegunaan K pada tahap ini:
+
+> K menjadi vector pembanding untuk menghasilkan nilai persentase relevansi setiap token dalam context window. Persentase tidak dihasilkan oleh K sendirian; Q dari token terakhir harus dibandingkan dengan semua K, kemudian hasilnya diproses oleh softmax.
+
+Untuk konteks `"Saya terkena bisa"`:
+
+```text
+Q dari token terakhir "bisa"
+→ dibandingkan dengan K_Saya
+→ dibandingkan dengan K_terkena
+→ dibandingkan dengan K_bisa
+→ softmax
+→ persentase relevansi setiap token
+```
+
 Head 1:
 
 ```text
@@ -386,6 +401,10 @@ Head 2 paling memperhatikan `"Saya"`. Dengan demikian, dua head dapat menghasilk
 
 Misalkan `v_proj` menghasilkan Value berikut.
 
+Fokus kegunaan V pada tahap ini:
+
+> V membawa informasi berbentuk vector dari setiap token. Persentase relevansi hasil Q–K menentukan seberapa besar setiap V ikut membentuk output attention.
+
 Head 1:
 
 ```text
@@ -439,6 +458,16 @@ o_proj → output attention → diteruskan ke proses berikutnya
 
 Ketika token baru diproses, Query token baru dapat langsung memakai K dan V token-token lama dari KV cache. KV cache hanya mempercepat proses; token dalam context window tetap menjadi sumber konteksnya.
 
+Jadi hubungan V dengan KV cache adalah:
+
+```text
+v_proj menghasilkan V
+→ V dipakai dalam attention
+→ V juga disimpan sementara dalam KV cache agar dapat dipakai kembali
+```
+
+V tidak dibuat khusus untuk menghasilkan KV cache. KV cache hanya menyimpan hasil K dan V yang sudah dibuat.
+
 ### 3.6 `o_proj`: menggabungkan semua head
 
 Output kedua head disambungkan, bukan dijumlahkan:
@@ -473,8 +502,8 @@ Angka keluaran `o_proj` belum dihitung pada pengantar ini. Hal yang perlu dipaha
 
 ```text
 q_proj → membuat Q dari posisi token terakhir
-k_proj → membuat K dari semua token yang boleh dilihat
-Q · K + softmax → menghasilkan bobot relevansi setiap head
+k_proj → membuat K pembanding dari semua token dalam context window
+Q · K + softmax → menghasilkan persentase relevansi setiap token
 v_proj → membuat V yang membawa informasi setiap token
 bobot relevansi × V → menghasilkan output setiap head
 o_proj → mencampurkan gabungan seluruh head

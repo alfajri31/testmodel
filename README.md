@@ -4,11 +4,11 @@ Project ini berisi proses belajar dari mengambil base model sampai menjalankan h
 
 ## Daftar Materi
 
-### Pengantar — Dasar Token, Embedding, dan Contextual Vector
+### Fondasi LLM — Token, Vector, Attention, dan Bobot
 
-Memahami bagaimana teks diubah menjadi token, diproses oleh attention, lalu digunakan untuk memprediksi token berikutnya.
+Memahami bagaimana teks diubah menjadi token dan vector, diproses oleh attention serta layer Transformer, lalu menggunakan bobot model untuk memprediksi token berikutnya.
 
-[Baca Pengantar](step0-concepts/README.md)
+[Baca Fondasi LLM](step0-concepts/README.md)
 
 ### Step 0 — Persiapan Python
 

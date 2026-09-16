@@ -1,4 +1,4 @@
-# Pengantar — Cara LLM Memprediksi Token Berikutnya
+# Fondasi LLM — Dari Token sampai Prediksi Token Berikutnya
 
 Step ini menjelaskan satu pertanyaan utama:
 

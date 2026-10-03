@@ -70,6 +70,12 @@ Mencari natural text pemain sepak bola yang relevan dari MongoDB memakai embeddi
 
 [Baca Step 9](step9/README.md)
 
+### Step 10 — Cek Spesifikasi Model
+
+Membaca konfigurasi dan ukuran file model hasil Step 8, lalu menghitung parameter Qwen3-0.6B dan menjelaskan memori saat inference.
+
+[Baca Step 10](step10/README.md)
+
 ## Alur Singkat
 
 ```text
@@ -92,6 +98,8 @@ Visualisasi Struktur dan Uji Inference
 Continue Training dari Merged Model
     ↓
 RAG dari MongoDB
+    ↓
+Cek Spesifikasi Model
 ```
 
 ## Ringkasan
@@ -105,4 +113,5 @@ Deploy      → menjalankan model melalui Ollama
 Continue    → melatih LoRA baru dari bobot merged model sebelumnya
 Merge lanjut → menggabungkan adapter training tambahan ke model tahap sebelumnya
 RAG         → mengambil fakta MongoDB saat inference tanpa melatih ulang model
+Spesifikasi → membaca arsitektur, parameter, dan ukuran bobot model
 ```

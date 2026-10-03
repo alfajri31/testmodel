@@ -58,9 +58,9 @@ Merekam struktur model sebagai teks dan graph di TensorBoard, lalu menguji adapt
 
 [Baca Step 7](step7/README.md)
 
-### 🟢 Step 8 — Continue Training Setelah Merge
+### 🟢 Step 8 — Training PEFT Standalone
 
-Melatih adapter LoRA baru dari model hasil merge Step 5, lalu menggabungkannya kembali agar training tambahan tidak dimulai dari base model awal.
+Melatih adapter LoRA dari base model secara standalone dan menyimpan checkpoint adapter.
 
 [Baca Step 8](step8/README.md)
 
@@ -75,6 +75,12 @@ Mencari natural text pemain sepak bola yang relevan dari MongoDB memakai embeddi
 Membaca konfigurasi dan ukuran file model hasil Step 8, lalu menghitung parameter Qwen3-0.6B dan menjelaskan memori saat inference.
 
 [Baca Step 10](step10/README.md)
+
+### 🟢 Step 11 — Hubungan RAG dan Model Saat Menjawab
+
+Memahami bagaimana query user diubah menjadi embedding, dokumen RAG dipilih, natural text dimasukkan ke context window, lalu model menghasilkan jawaban melalui inference.
+
+[Baca Step 11](step11/README.md)
 
 ## 🟢 Alur Singkat
 
@@ -95,23 +101,25 @@ Deploy ke Ollama
     ↓
 Visualisasi Struktur dan Uji Inference
     ↓
-Continue Training dari Merged Model
+Training dan Merge Standalone
     ↓
 RAG dari MongoDB
     ↓
 Cek Spesifikasi Model
+    ↓
+Hubungan RAG dan Model Saat Menjawab
 ```
 
 ## 🟢 Ringkasan
 
 ```text
 Fine-tuning → membuat model lebih condong mengikuti dataset
-Merge       → menggabungkan LoRA dengan base model
+Merge       → konsep penggabungan LoRA dengan base model (dipelajari di Step 5)
 Uji model   → menjalankan inference dan melihat struktur model
 Konversi    → mengubah format model untuk runtime
 Deploy      → menjalankan model melalui Ollama
-Continue    → melatih LoRA baru dari bobot merged model sebelumnya
-Merge lanjut → menggabungkan adapter training tambahan ke model tahap sebelumnya
+Continue    → melanjutkan training adapter dari checkpoint sebelumnya
 RAG         → mengambil fakta MongoDB saat inference tanpa melatih ulang model
 Spesifikasi → membaca arsitektur, parameter, dan ukuran bobot model
+RAG + LLM   → RAG memberi fakta, LLM merangkai jawaban melalui inference
 ```

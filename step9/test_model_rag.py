@@ -12,12 +12,14 @@ from pathlib import Path
 import numpy as np
 import torch
 from pymongo import MongoClient
+from peft import PeftModel
 from sentence_transformers import SentenceTransformer
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 STEP_DIR = Path(__file__).resolve().parent
-MODEL_PATH = STEP_DIR.parent / "step8" / "merged_model"
+BASE_MODEL_PATH = Path("/Users/fajri/Projects/mytestmodel")
+ADAPTER_PATH = STEP_DIR.parent / "step8" / "output"
 
 # Database yang sama dengan footballmodel/step.
 MONGODB_URI = (
@@ -114,10 +116,14 @@ def generate_answer(question, rag_context, tokenizer, model):
 
 
 def main():
-    if not (MODEL_PATH / "config.json").is_file():
+    if not (BASE_MODEL_PATH / "config.json").is_file():
         raise FileNotFoundError(
-            f"Model hasil Step 8 tidak ditemukan di: {MODEL_PATH}\n"
-            "Jalankan Step 8 sampai merge_continue.py selesai terlebih dahulu."
+            f"Base model tidak ditemukan di: {BASE_MODEL_PATH}"
+        )
+    if not (ADAPTER_PATH / "adapter_config.json").is_file():
+        raise FileNotFoundError(
+            f"Adapter Step 8 tidak ditemukan di: {ADAPTER_PATH}\n"
+            "Jalankan step8/train_peft.py terlebih dahulu."
         )
 
     print(f"Memuat embedding model RAG: {EMBEDDING_MODEL_NAME}")
@@ -126,11 +132,16 @@ def main():
         local_files_only=True,
     )
 
-    print(f"Memuat model jawaban Step 8: {MODEL_PATH}")
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
-    model = AutoModelForCausalLM.from_pretrained(
-        MODEL_PATH,
+    print(f"Memuat base model: {BASE_MODEL_PATH}")
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_PATH, local_files_only=True)
+    base_model = AutoModelForCausalLM.from_pretrained(
+        BASE_MODEL_PATH,
         torch_dtype=torch.float32,
+        local_files_only=True,
+    )
+    model = PeftModel.from_pretrained(
+        base_model,
+        ADAPTER_PATH,
         local_files_only=True,
     )
     model.eval()

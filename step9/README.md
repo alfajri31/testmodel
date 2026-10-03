@@ -14,7 +14,7 @@ MongoDB RAG memberi fakta
 
 ```text
 Model jawaban
-→ /Users/fajri/Projects/testmodel/step8/merged_model
+→ base model + adapter `/Users/fajri/Projects/testmodel/step8/output`
 
 Database RAG
 → gosoccer_vector
@@ -128,10 +128,10 @@ LLM inference
 
 ## 🟢 Menjalankan contoh
 
-Pastikan hasil merge Step 8 sudah tersedia:
+Pastikan adapter Step 8 sudah tersedia:
 
 ```bash
-ls /Users/fajri/Projects/testmodel/step8/merged_model/config.json
+ls /Users/fajri/Projects/testmodel/step8/output/adapter_config.json
 ```
 
 Pastikan package tersedia:
@@ -156,6 +156,10 @@ Perintah interaktif:
 /rag  → menampilkan natural text dan similarity hasil retrieval terakhir
 /exit → menutup program
 ```
+
+## 🟢 Training dan inference
+
+Step 9 berfokus pada inference RAG. Tidak ada proses merge; model dimuat sebagai base model dengan adapter Step 8.
 
 ## 🟢 Jika similarity terlalu rendah
 

@@ -1,28 +1,39 @@
-"""Uji model setelah continue training dan merge tahap kedua."""
+"""Uji base model dengan adapter LoRA hasil training Step 8."""
 
 from pathlib import Path
 
 import torch
+from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
-MODEL_PATH = Path(__file__).resolve().parent / "merged_model"
+BASE_MODEL_PATH = Path("/Users/fajri/Projects/mytestmodel")
+ADAPTER_PATH = Path(__file__).resolve().parent / "output"
 
 
-if not (MODEL_PATH / "config.json").is_file():
+if not (BASE_MODEL_PATH / "config.json").is_file():
     raise FileNotFoundError(
-        f"Model hasil merge lanjutan tidak ditemukan di: {MODEL_PATH}\n"
-        "Jalankan merge_continue.py terlebih dahulu."
+        f"Base model tidak ditemukan di: {BASE_MODEL_PATH}"
+    )
+if not (ADAPTER_PATH / "adapter_config.json").is_file():
+    raise FileNotFoundError(
+        f"Adapter LoRA tidak ditemukan di: {ADAPTER_PATH}\n"
+        "Jalankan train_peft.py terlebih dahulu."
     )
 
 
 tokenizer = AutoTokenizer.from_pretrained(
-    MODEL_PATH,
+    BASE_MODEL_PATH,
     local_files_only=True,
 )
-model = AutoModelForCausalLM.from_pretrained(
-    MODEL_PATH,
+base_model = AutoModelForCausalLM.from_pretrained(
+    BASE_MODEL_PATH,
     torch_dtype=torch.float32,
+    local_files_only=True,
+)
+model = PeftModel.from_pretrained(
+    base_model,
+    ADAPTER_PATH,
     local_files_only=True,
 )
 model.eval()

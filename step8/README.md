@@ -1,58 +1,34 @@
-# 🟢 Step 8 — Continue Training dari Merged Model
+# 🟢 Step 8 — Training PEFT Standalone
 
-Step ini menunjukkan cara menambah training setelah model tahap sebelumnya sudah di-*merge*. Model tidak kembali memulai dari `/Users/fajri/Projects/mytestmodel`.
+Step ini menunjukkan contoh training adapter LoRA yang berdiri sendiri. Step ini tidak melakukan merge dan tidak mengambil output dari Step lain.
 
-Sumber model untuk training ini adalah:
+Sumber modelnya adalah base model langsung:
 
 ```text
-step5/merged_model
+/Users/fajri/Projects/mytestmodel
 ```
 
-Folder tersebut sudah berisi bobot:
+Saat `train_peft.py` berjalan, base model dimuat, adapter LoRA baru dibuat, lalu adapter tersebut dilatih memakai dua contoh di `dataset/dataset.jsonl`.
 
 ```text
 base model Qwen3-0.6B
-+ adapter LoRA tahap pertama dari step5
-= merged model tahap pertama
-```
-
-Saat `train_continue.py` berjalan, model tersebut dimuat sebagai model dasar. Script lalu menambahkan adapter LoRA baru dan melatihnya memakai dataset kecil di `dataset/dataset.jsonl`.
-
-```text
-step5/merged_model
         ↓
-adapter LoRA tahap kedua dilatih
+adapter LoRA Step 8 dilatih
         ↓
 step8/output
-        ↓
-merge_continue.py
-        ↓
-step8/merged_model
 ```
 
-## 🟢 Mengapa ini tidak mulai dari nol?
+## 🟢 Apa yang dimaksud standalone?
 
-`step5/merged_model` sudah memuat perubahan bobot dari training tahap pertama. Karena `train_continue.py` memuat folder itu, semua pengetahuan dan pola hasil merge sebelumnya tetap menjadi titik awal.
-
-Yang baru dari Step 8 adalah adapter LoRA tahap kedua:
+Standalone berarti Step 8 memiliki jalur input dan output sendiri:
 
 ```text
-bobot model hasil merge tahap pertama
-→ dibekukan
-
-adapter LoRA tahap kedua
-→ dibuat dan dilatih dengan dataset baru
+base model
+→ adapter LoRA Step 8
+→ step8/output
 ```
 
-Setelah `merge_continue.py`, perubahan adapter tahap kedua digabungkan ke model hasil tahap pertama.
-
-```text
-merged tahap pertama
-+ perubahan LoRA tahap kedua
-= merged model lanjutan
-```
-
-Jadi adapter tahap kedua memang mulai dengan nilai awal baru, tetapi model yang dipakainya sudah bukan base model awal. Ia melanjutkan dari bobot merged tahap pertama.
+Output Step 8 tidak menimpa output Step 5, Step 9, atau Step 11.
 
 ## 🟢 Struktur folder
 
@@ -60,16 +36,14 @@ Jadi adapter tahap kedua memang mulai dengan nilai awal baru, tetapi model yang 
 step8/
 ├── dataset/
 │   └── dataset.jsonl       # Contoh data tambahan
-├── train_continue.py       # Training LoRA tahap kedua
-├── merge_continue.py       # Merge model tahap pertama + adapter tahap kedua
-├── test_model.py           # Uji model hasil merge lanjutan
+├── train_peft.py       # Training adapter LoRA standalone
+├── test_model.py           # Uji base model + adapter LoRA
 ├── output/                 # Dibuat setelah training
-└── merged_model/           # Dibuat setelah merge
 ```
 
 ## 🟢 Dataset contoh
 
-Dataset pada step ini sengaja kecil. Dataset awal Step 5 mengajarkan pola bahwa Alfajri adalah programmer Java. Dataset Step 8 menambahkan informasi baru bahwa Alfajri sedang mempelajari machine learning.
+Dataset pada step ini sengaja hanya memiliki dua contoh tentang informasi yang sedang dipelajari Alfajri.
 
 Setelah training, uji dua hal berikut:
 
@@ -81,21 +55,21 @@ Alfajri sedang belajar apa?
 → diharapkan menjawab machine learning
 ```
 
-Hasil dapat berubah karena dataset contoh sangat kecil. Tujuannya adalah melihat alur continue training, bukan membuat model pengetahuan yang stabil.
+Hasil dapat berubah karena dataset contoh sangat kecil. Tujuannya adalah melihat alur training standalone dan checkpoint, bukan membuat model pengetahuan yang stabil.
 
 ## 🟢 Menjalankan
 
-Pastikan Step 5 sudah mempunyai model hasil merge:
+Pastikan base model tersedia:
 
 ```bash
-ls /Users/fajri/Projects/testmodel/step5/merged_model/config.json
+ls /Users/fajri/Projects/mytestmodel/config.json
 ```
 
-Jalankan training tahap kedua:
+Jalankan training Step 8:
 
 ```bash
 cd /Users/fajri/Projects/testmodel
-python3 step8/train_continue.py
+python3 step8/train_peft.py
 ```
 
 Hasilnya adalah adapter baru di:
@@ -104,17 +78,25 @@ Hasilnya adalah adapter baru di:
 step8/output/
 ```
 
-Gabungkan adapter tahap kedua:
-
-```bash
-python3 step8/merge_continue.py
-```
-
-Hasilnya disimpan terpisah agar model tahap pertama tidak tertimpa:
+Karena training memakai `save_strategy="epoch"` dan tiga epoch, output biasanya berisi checkpoint dari Step 8 sendiri:
 
 ```text
-step8/merged_model/
+step8/output/
+├── checkpoint-1/
+├── checkpoint-2/
+├── checkpoint-3/
+└── adapter_config.json
 ```
+
+Checkpoint tersebut adalah snapshot adapter selama training Step 8. Base model tetap berada di `/Users/fajri/Projects/mytestmodel`.
+
+Jika folder `step8/output/checkpoint-*` sudah ada, `train_peft.py` akan menampilkan daftar checkpoint dan meminta pilihan:
+
+```text
+Checkpoint [0]: 2
+```
+
+Masukkan `2` untuk melanjutkan dari `checkpoint-2`. Masukkan `0` atau tekan Enter untuk memulai training dari awal.
 
 Uji model:
 
@@ -127,7 +109,7 @@ python3 step8/test_model.py
 /exit  → tutup program
 ```
 
-## 🟢 Continue training dan resume checkpoint berbeda
+## 🟢 Training standalone dan resume checkpoint berbeda
 
 Ada dua istilah yang mudah tertukar:
 
@@ -136,22 +118,22 @@ Resume checkpoint
 → melanjutkan training yang terhenti
 → memakai adapter, optimizer, scheduler, dan progres step yang sama
 
-Continue training setelah merge
-→ memakai full model hasil merge sebagai titik awal baru
-→ membuat adapter LoRA tahap berikutnya untuk dataset tambahan
+Training standalone
+→ memakai base model langsung sebagai titik awal
+→ membuat adapter LoRA Step 8
 ```
 
-Step 8 memakai cara kedua.
+Step 8 memakai training standalone.
 
-Jika training tahap kedua terhenti di tengah jalan dan ingin melanjutkan tepat dari step terakhir, gunakan checkpoint yang dibuat di `step8/output/checkpoint-*` dengan `trainer.train(resume_from_checkpoint=...)`. Contoh ini sengaja dibuat sederhana dan tidak mengaktifkan resume otomatis.
+Jika training Step 8 terhenti di tengah jalan, pilih checkpoint yang tersedia ketika `train_peft.py` dijalankan kembali. Script akan meneruskan optimizer, scheduler, dan progres training dari checkpoint tersebut.
 
 ## 🟢 Tahap berikutnya
 
-Jika ingin menambah training lagi setelah Step 8, jadikan hasil merge Step 8 sebagai sumber model berikutnya:
+Jika ingin menambah training lagi setelah Step 8, gunakan checkpoint adapter sebagai sumber training berikutnya:
 
 ```text
-step8/merged_model
-→ model sumber untuk training tahap ketiga
+step8/output/checkpoint-*
+→ checkpoint sumber untuk training tahap berikutnya
 ```
 
-Jangan kembali memuat `/Users/fajri/Projects/mytestmodel` bila tujuanmu adalah mempertahankan hasil merge sebelumnya.
+Step 8 sengaja hanya menghasilkan adapter LoRA. Proses merge tidak termasuk dalam step ini.

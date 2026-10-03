@@ -73,6 +73,35 @@ token ID "Saya"
 
 Model nyata biasanya menggunakan ratusan atau ribuan dimensi. Contoh dua dimensi pada pengantar ini hanya menyederhanakan cara kerja.
 
+### Hidden size: panjang vector utama setiap token
+
+`Hidden size` adalah jumlah angka dalam vector utama yang dibawa setiap token saat melewati model. Pada Qwen3-0.6B di project ini, hidden size adalah `1.024`.
+
+```text
+token "bisa"
+→ embedding awal [1.024 angka]
+→ contextual vector layer 1 [1.024 angka]
+→ contextual vector layer 2 [1.024 angka]
+→ ...
+→ contextual vector akhir h [1.024 angka]
+```
+
+Jadi hidden size bukan ukuran seluruh matrix bobot. Hidden size adalah panjang satu vector token pada jalur utama Transformer.
+
+Matrix bobot memakai hidden size sebagai ukuran input atau outputnya. Contoh pada Qwen3-0.6B:
+
+```text
+hidden vector token  [1 × 1.024]
+× Wq                 [1.024 × 2.048]
+= Q                  [1 × 2.048]
+
+hasil attention
+→ o_proj
+→ kembali menjadi [1 × 1.024]
+```
+
+Hasil perlu kembali ke `1.024` angka supaya dapat ditambahkan ke hidden vector lama melalui residual connection dan diteruskan ke layer berikutnya.
+
 Token `"bisa"` memiliki embedding awal yang sama pada kedua kalimat:
 
 ```text

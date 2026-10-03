@@ -85,7 +85,7 @@ token ID "Saya"
 
 Model nyata biasanya menggunakan ratusan atau ribuan dimensi. Contoh dua dimensi pada pengantar ini hanya menyederhanakan cara kerja.
 
-### 🟢 Hidden size: panjang vector utama setiap token
+### Hidden size: panjang vector utama setiap token
 
 `Hidden size` adalah jumlah angka dalam vector utama yang dibawa setiap token saat melewati model. Pada Qwen3-0.6B di project ini, hidden size adalah `1.024`.
 
@@ -104,7 +104,7 @@ token "bisa"
 
 Jadi hidden size bukan ukuran seluruh matriks bobot. Hidden size adalah panjang satu vector token pada jalur utama Transformer.
 
-### 🟢 Mengapa vector memiliki banyak dimensi?
+### Mengapa vector memiliki banyak dimensi?
 
 Jumlah dimensi menyediakan ruang representasi untuk setiap token. Satu token tetap memiliki satu vector, tetapi vector tersebut memiliki banyak angka yang dapat bekerja bersama untuk merepresentasikan pola dan hubungannya dengan token lain.
 
@@ -181,7 +181,7 @@ Karena konteksnya berbeda, hasilnya juga dapat berbeda:
 → next token dapat berupa "ular"
 ```
 
-### 🟢 Makna tidak tertulis sebagai label di dalam vector
+### Makna tidak tertulis sebagai label di dalam vector
 
 Di dalam vector tidak ada tulisan atau label eksplisit seperti:
 
@@ -260,7 +260,7 @@ Dimensi setiap head = 2
 Total dimensi       = 4
 ```
 
-### 🟢 3.1 Peta penggunaan bobot dalam satu layer
+### 3.1 Peta penggunaan bobot dalam satu layer
 
 Dalam satu Transformer layer, bobot dipakai pada bagian berikut:
 
@@ -288,7 +288,7 @@ W_up    [1.024 × 3.072]   → ruang MLP
 W_down  [3.072 × 1.024]   → kembali ke hidden size
 ```
 
-### 🟢 Mengapa matriks bobot memiliki banyak baris dan kolom?
+### Mengapa matriks bobot memiliki banyak baris dan kolom?
 
 Matriks bobot menghubungkan setiap angka input dengan setiap koordinat output. Jika vector input memiliki 2 angka dan output yang diinginkan memiliki 3 angka, bentuk bobotnya adalah `2 × 3`:
 
@@ -484,7 +484,7 @@ Bukan:
 Q_bisa Head 1 · K token Head 2 ❌
 ```
 
-### 🟢 5.1 Menghitung relevansi Head 1
+### 5.1 Menghitung relevansi Head 1
 
 ```text
 Q_bisa Head 1 = [1.0, 0.0]
@@ -517,7 +517,7 @@ bisa    → 14%
 
 Head 1 paling memperhatikan `"terkena"`.
 
-### 🟢 5.2 Menghitung relevansi Head 2
+### 5.2 Menghitung relevansi Head 2
 
 ```text
 Q_bisa Head 2 = [0.0, 1.0]
@@ -953,7 +953,7 @@ pola kata yang sering cocok berdampingan
 
 Model tidak harus menemukan satu kalimat utuh yang sama persis di data latih. Ia dapat menyusun kalimat baru dari banyak pola kecil yang dipelajari.
 
-### 🟢 Greedy decoding dan sampling
+### Greedy decoding dan sampling
 
 Setelah `lm_head`, model mempunyai probabilitas beberapa kandidat token:
 
@@ -991,7 +991,7 @@ Pengaturan seperti `temperature`, `top-k`, dan `top-p` menentukan seberapa berva
 
 ## 🟢 10. Training, validation, dan inference
 
-### 🟢 JSONL, role, dan target training
+### JSONL, role, dan target training
 
 Pada chat fine-tuning, JSONL dapat berisi role `user` dan `assistant`:
 
@@ -1030,7 +1030,7 @@ Target : "ular"
 
 Jika prediksinya tidak sesuai target, proses training memperbaiki bobot neural network agar target yang benar mendapat probabilitas lebih tinggi.
 
-### 🟢 Training vs inference
+### Training vs inference
 
 Training dan inference sama-sama melakukan prediksi token, tetapi tujuannya berbeda.
 
@@ -1068,7 +1068,7 @@ Training  → prediksi + loss + pembaruan bobot
 Inference → prediksi saja + bobot tetap
 ```
 
-### 🟢 Akurasi dan validation loss
+### Akurasi dan validation loss
 
 Keduanya memakai target, tetapi mengukur hal yang berbeda.
 
@@ -1124,7 +1124,7 @@ validation loss rendah
 
 Jadi checkpoint terbaik biasanya dipilih berdasarkan validation loss yang rendah atau metrik validasi lain yang sesuai, bukan dengan mengambil satu bobot tertentu. Seluruh matriks bobot dari checkpoint tersebut digunakan saat inference.
 
-### 🟢 Context window: ingatan kerja sementara
+### Context window: ingatan kerja sementara
 
 Selama percakapan berlangsung, token baru ditambahkan ke context window. Model lalu menghitung contextual vector baru agar jawaban berikutnya dapat mempertimbangkan percakapan sebelumnya.
 
@@ -1148,7 +1148,7 @@ context window lama dihapus
 
 Base model tetap sama. Yang dibersihkan adalah konteks percakapan sementara, bukan bobot atau pengetahuan permanen model.
 
-### 🟢 Dari mana nilai bobot berasal dan bagaimana neural network memperbaikinya?
+### Dari mana nilai bobot berasal dan bagaimana neural network memperbaikinya?
 
 Saat model baru dibuat, matriks bobot—termasuk `Wq`, `Wk`, `Wv`, `Wo`, `W_up`, dan `W_down`—sudah dibuat dan diisi angka acak kecil. Neural network kemudian menggunakan bobot tersebut untuk membuat prediksi. Prediksi dibandingkan dengan token target, lalu loss menunjukkan seberapa besar kesalahannya.
 

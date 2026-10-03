@@ -279,6 +279,35 @@ menyampaikannya. Model masih dapat meringkas, melewatkan item, atau salah
 menyalin daftar panjang. Untuk fakta yang harus persis, validasi langsung ke
 database atau tampilkan hasil RAG tanpa membiarkan model mengubahnya.
 
+## 🟢 Overfitting pada dataset jawaban
+
+Overfitting terjadi ketika model terlalu menghafal contoh training, bukan
+mempelajari pola umumnya.
+
+Contoh dataset yang terlalu sempit:
+
+```text
+User: Sebutkan pemain Inter Miami.
+Model: Lionel Messi dan Luis Suárez.
+```
+
+Jika hanya pola itu yang dilatih, model dapat mengulang dua nama tersebut
+ketika user bertanya dengan cara berbeda, meskipun RAG memberikan daftar yang
+lebih panjang.
+
+Untuk menguranginya, gunakan beberapa parafrase dan variasi konteks:
+
+```text
+Sebutkan pemain Inter Miami.
+Siapa saja pemain Inter Miami?
+Tampilkan daftar pemain yang tersedia.
+Pemain apa yang tercatat di referensi?
+```
+
+Pertanyaan evaluasi sebaiknya tidak sama persis dengan pertanyaan training.
+Dengan begitu kita dapat memeriksa apakah model memahami pola jawaban atau
+hanya menghafal pasangan pertanyaan dan jawaban tertentu.
+
 ## 🟢 Ringkasan
 
 ```text

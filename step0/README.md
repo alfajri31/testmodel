@@ -1,6 +1,6 @@
-# Step 0 — Python untuk Proyek
+# <span style="color: #2563EB;">Step 0 — Python untuk Proyek</span>
 
-## Memahami nama dan versi Python
+## <span style="color: #2563EB;">Memahami nama dan versi Python</span>
 
 Nama perintah Python menunjukkan versi interpreter yang akan dijalankan:
 
@@ -45,7 +45,7 @@ python3.11 --version
 
 Jangan menghapus atau mengganti Python bawaan macOS. Gunakan versi Python yang sesuai untuk setiap proyek.
 
-## Bagaimana terminal memilih Python?
+## <span style="color: #2563EB;">Bagaimana terminal memilih Python?</span>
 
 Ketika perintah berikut dijalankan:
 
@@ -76,7 +76,7 @@ which -a python3.11
 
 Karena `/usr/bin/python3` ditemukan sebagai `python3`, perintah tersebut tetap menghasilkan Python 3.9.6. Sementara itu, Homebrew menyediakan perintah yang lebih spesifik, yaitu `python3.11`.
 
-## Mengecek versi Python
+## <span style="color: #2563EB;">Mengecek versi Python</span>
 
 Cek versi:
 
@@ -107,7 +107,7 @@ command not found
 
 Contohnya, macOS dapat menyediakan `python3` tetapi tidak menyediakan perintah `python`.
 
-## Proses instalasi Python 3.11
+## <span style="color: #2563EB;">Proses instalasi Python 3.11</span>
 
 Homebrew mengunduh Python 3.11 beserta dependency-nya, lalu menaruh executable di dalam direktori Homebrew. Instalasi ini tidak menimpa `/usr/bin/python3` milik macOS.
 
@@ -160,7 +160,7 @@ python3     → /usr/bin/python3             → Python 3.9.6
 python3.11  → /opt/homebrew/bin/python3.11 → Python 3.11.x
 ```
 
-## Python dan package
+## <span style="color: #2563EB;">Python dan package</span>
 
 Setiap instalasi Python mempunyai lokasi package sendiri:
 
@@ -193,7 +193,7 @@ pip install nama_package
 
 Karena `python3.11 -m pip` menjamin package dipasang untuk interpreter Python 3.11 tersebut.
 
-## Apa itu virtual environment?
+## <span style="color: #2563EB;">Apa itu virtual environment?</span>
 
 Virtual environment adalah lingkungan Python khusus untuk satu proyek. Package di dalamnya tidak bercampur dengan package Python lain.
 
@@ -229,7 +229,7 @@ python3.11       -m venv       .venv
      └─────────────────────────── versi Python yang digunakan
 ```
 
-## Membuat environment Python 3.11
+## <span style="color: #2563EB;">Membuat environment Python 3.11</span>
 
 Buat environment baru untuk `llama.cpp`:
 
@@ -272,7 +272,7 @@ Keluar dari environment:
 deactivate
 ```
 
-## Menginstal package converter
+## <span style="color: #2563EB;">Menginstal package converter</span>
 
 Perbarui alat instalasi di environment Python 3.11:
 
@@ -307,7 +307,7 @@ Instal requirements llama.cpp
 Jalankan convert_hf_to_gguf.py
 ```
 
-## Kesalahan yang perlu dihindari
+## <span style="color: #2563EB;">Kesalahan yang perlu dihindari</span>
 
 Environment lama berikut memakai Python 3.9:
 
@@ -347,7 +347,7 @@ python3 nama_script.py
 
 Karena pada Mac ini, `python3` masih merupakan Python 3.9.6 bawaan macOS.
 
-## Kesimpulan
+## <span style="color: #2563EB;">Kesimpulan</span>
 
 ```text
 Python  = program/interpreter yang menjalankan kode

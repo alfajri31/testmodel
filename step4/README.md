@@ -1,8 +1,8 @@
-# Step 4 — Training LoRA dan TensorBoard
+# <span style="color: #2563EB;">Step 4 — Training LoRA dan TensorBoard</span>
 
 Step ini digunakan untuk melatih LoRA dan melihat hasil proses training melalui TensorBoard.
 
-## Alur sederhana
+## <span style="color: #2563EB;">Alur sederhana</span>
 
 ```text
 Dataset
@@ -20,7 +20,7 @@ Hasil disimpan ke folder output
 
 Base model tidak berubah. Hasil training disimpan sebagai adapter LoRA.
 
-## Dataset
+## <span style="color: #2563EB;">Dataset</span>
 
 Contoh `dataset/dataset.jsonl`:
 
@@ -37,7 +37,7 @@ Dataset yang konsisten dan memiliki beberapa variasi pertanyaan membuat jawaban 
 
 Saat model digunakan, model tidak mencari jawaban langsung di file JSONL. Hasil pembelajaran sudah tersimpan pada parameter LoRA.
 
-## Token
+## <span style="color: #2563EB;">Token</span>
 
 Tokenizer mengubah teks menjadi token ID:
 
@@ -57,7 +57,7 @@ Setiap token dipilih berdasarkan probabilitas dari konteks, base model, LoRA, da
 
 Token di dalam kamus tidak dapat habis. Yang memiliki batas adalah jumlah token di dalam context window.
 
-## Menjalankan training
+## <span style="color: #2563EB;">Menjalankan training</span>
 
 Instal dependensi:
 
@@ -92,7 +92,7 @@ Log grafik akan tersimpan di:
 step4/tensorboard_logs/
 ```
 
-## Menjalankan TensorBoard
+## <span style="color: #2563EB;">Menjalankan TensorBoard</span>
 
 ```bash
 docker run -d --rm \
@@ -115,9 +115,9 @@ Untuk menghentikan:
 docker stop testmodel-tensorboard-native
 ```
 
-## Accuracy, loss, dan entropy
+## <span style="color: #2563EB;">Accuracy, loss, dan entropy</span>
 
-### Accuracy
+### <span style="color: #2563EB;">Accuracy</span>
 
 Accuracy berasal dari perbandingan:
 
@@ -138,7 +138,7 @@ Semakin banyak token yang cocok, semakin tinggi `token accuracy`.
 
 Ini adalah akurasi terhadap dataset training, bukan jaminan bahwa jawaban untuk pertanyaan baru selalu benar.
 
-### Analogi loss dan entropy
+### <span style="color: #2563EB;">Analogi loss dan entropy</span>
 
 ```text
 Loss    = lurus atau melenceng dari jawaban target
@@ -157,7 +157,7 @@ Entropy tinggi = pilihan lebar, model lebih ragu
 
 Model bisa memiliki entropy rendah tetapi loss tinggi. Artinya, model sangat yakin tetapi yakin pada jawaban yang salah.
 
-## Pembelian dan pemakaian token API
+## <span style="color: #2563EB;">Pembelian dan pemakaian token API</span>
 
 Layanan model terkenal seperti OpenAI, Anthropic Claude, dan Google Gemini pada umumnya menghitung biaya API berdasarkan token yang benar-benar diproses.
 
@@ -170,7 +170,7 @@ Biaya API = biaya token input + biaya token output
 
 Harga input dan output dapat berbeda untuk setiap model. Beberapa layanan juga menghitung cached token, tool, atau fitur tambahan secara terpisah.
 
-### Context window bukan kuota
+### <span style="color: #2563EB;">Context window bukan kuota</span>
 
 ```text
 Context window = kapasitas maksimum dalam satu request
@@ -189,7 +189,7 @@ Pemakaian request = 12.000 token
 
 Jika input benar-benar berjumlah 1.000.000 token, hampir tidak ada ruang tersisa untuk output. Total input dan output harus tetap berada dalam batas context window.
 
-### Menghapus history
+### <span style="color: #2563EB;">Menghapus history</span>
 
 Menghapus chat history atau memory dapat mengurangi token input pada request berikutnya. Namun pemakaian dan biaya request sebelumnya tidak dikembalikan.
 
@@ -208,7 +208,7 @@ Dokumentasi resmi:
 - [Anthropic — Pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
 - [Google Gemini API — Billing](https://ai.google.dev/gemini-api/docs/billing)
 
-## Cara membaca hasil training
+## <span style="color: #2563EB;">Cara membaca hasil training</span>
 
 ```text
 Loss turun               → prediksi semakin mendekati target

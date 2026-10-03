@@ -1,4 +1,4 @@
-# Step 7 — Visualisasi Struktur Model dan Uji Inference
+# <span style="color: #2563EB;">Step 7 — Visualisasi Struktur Model dan Uji Inference</span>
 
 Step ini berfokus pada dua kegiatan:
 
@@ -15,7 +15,7 @@ test_model.py
 → menjalankan inference interaktif
 ```
 
-## Struktur Folder
+## <span style="color: #2563EB;">Struktur Folder</span>
 
 ```text
 step7/
@@ -26,7 +26,7 @@ step7/
 └── test_model.py         # uji inference interaktif
 ```
 
-## Visualisasi yang Direkam
+## <span style="color: #2563EB;">Visualisasi yang Direkam</span>
 
 `train_peft.py` merekam struktur base model sebelum LoRA dipasang:
 
@@ -66,7 +66,7 @@ lm_head
 
 `ModelGraphView` hanya digunakan untuk visualisasi. Training dan inference tetap memakai forward asli dari model Qwen.
 
-## Pilihan 1 — Hanya Membuat Graph
+## <span style="color: #2563EB;">Pilihan 1 — Hanya Membuat Graph</span>
 
 Gunakan `GRAPH_ONLY=1` jika hanya ingin merekam struktur model tanpa menjalankan training:
 
@@ -89,7 +89,7 @@ Program berhenti sebelum training
 
 `GRAPH_ONLY=1` hanya berlaku untuk perintah tersebut dan tidak mengubah model.
 
-## Pilihan 2 — Membuat Graph dan Menjalankan Training
+## <span style="color: #2563EB;">Pilihan 2 — Membuat Graph dan Menjalankan Training</span>
 
 Jalankan tanpa `GRAPH_ONLY=1`:
 
@@ -113,7 +113,7 @@ Simpan adapter ke step7/output
 Simpan metric ke step7/tensorboard_logs
 ```
 
-## Membuka TensorBoard
+## <span style="color: #2563EB;">Membuka TensorBoard</span>
 
 ```bash
 tensorboard --logdir step7/tensorboard_logs
@@ -133,7 +133,7 @@ Graphs      → graph visual dari add_graph
 Time Series → metric training seperti loss dan learning rate
 ```
 
-## Menguji Model
+## <span style="color: #2563EB;">Menguji Model</span>
 
 Setelah adapter tersedia di `step7/output`, jalankan:
 
@@ -161,7 +161,7 @@ Perintah interaktif:
 
 Inference hanya menggunakan bobot yang sudah tersedia. Percakapan tidak memperbarui bobot model.
 
-## Kesimpulan
+## <span style="color: #2563EB;">Kesimpulan</span>
 
 ```text
 GRAPH_ONLY=1

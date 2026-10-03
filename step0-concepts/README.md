@@ -8,7 +8,7 @@ Dokumen ini menggunakan satu model mainan dengan empat dimensi dan dua head. Den
 
 Semua angka hanya ilustrasi agar perhitungannya mudah dilihat, bukan nilai asli dari model tertentu.
 
-Nilai bobot seperti `Wq`, `Wk`, `Wv`, `Wo`, `W_up`, dan `W_down` belum dijelaskan di awal agar alurnya tetap sederhana. Asal nilai bobot tersebut dibahas pada Bagian 6, setelah alur prediksi token selesai.
+Nilai bobot seperti `Wq`, `Wk`, `Wv`, `Wo`, `W_up`, dan `W_down` belum dijelaskan di awal agar alurnya tetap sederhana. Asal nilai bobot tersebut dibahas pada Bagian 10, setelah alur prediksi token selesai.
 
 ## 🟢 Gambaran Besar
 
@@ -77,6 +77,8 @@ Model nyata biasanya menggunakan ratusan atau ribuan dimensi. Contoh dua dimensi
 
 `Hidden size` adalah jumlah angka dalam vector utama yang dibawa setiap token saat melewati model. Pada Qwen3-0.6B di project ini, hidden size adalah `1.024`.
 
+Jika model sedang memproses satu token, bentuk vector tersebut dapat ditulis sebagai `[1 × 1.024]`: satu baris yang berisi 1.024 angka. Angka `1` menunjukkan jumlah token yang sedang ditulis pada contoh, sedangkan `1.024` menunjukkan jumlah angka untuk setiap token.
+
 ```text
 token "bisa"
 → embedding awal [1.024 angka]
@@ -86,9 +88,9 @@ token "bisa"
 → contextual vector akhir h [1.024 angka]
 ```
 
-Jadi hidden size bukan ukuran seluruh matrix bobot. Hidden size adalah panjang satu vector token pada jalur utama Transformer.
+Jadi hidden size bukan ukuran seluruh matriks bobot. Hidden size adalah panjang satu vector token pada jalur utama Transformer.
 
-Matrix bobot memakai hidden size sebagai ukuran input atau outputnya. Contoh pada Qwen3-0.6B:
+Matriks bobot memakai hidden size sebagai ukuran input atau outputnya. Contoh pada Qwen3-0.6B:
 
 ```text
 hidden vector token  [1 × 1.024]
@@ -160,7 +162,7 @@ Bagian 2 hanya memberikan gambaran besar. Perhitungan Q, K, V, setiap head, dan 
 
 ## 🟢 3. Gambaran projection dalam Transformer
 
-Setiap projection menggunakan matriks bobot yang sudah tersimpan di base model. Matriks tersebut dipakai berulang pada setiap input, tetapi nilainya tidak berubah saat inference. Nilai bobot dan proses pembelajarannya dibahas pada Bagian 6.
+Setiap projection menggunakan matriks bobot yang sudah tersimpan di base model. Matriks tersebut dipakai berulang pada setiap input, tetapi nilainya tidak berubah saat inference. Nilai bobot dan proses pembelajarannya dibahas pada Bagian 10.
 
 Gunakan konfigurasi model mainan:
 
@@ -232,9 +234,9 @@ hidden_bisa = [0.5, 0.5, 0.0, 0.5]
 
 Nilai tersebut adalah contoh input ke `q_proj`. Pada Layer pertama, nilainya berasal dari representasi embedding token beserta pemrosesan awal model. Pada layer berikutnya, nilainya berasal dari output layer sebelumnya.
 
-Pada tahap ini, asal dan cara mendapatkan nilai bobot `Wq` **belum dibahas**. Angka matrix berikut hanya ilustrasi untuk menunjukkan bagaimana hidden vector diubah menjadi Q total.
+Pada tahap ini, asal dan cara mendapatkan nilai bobot `Wq` **belum dibahas**. Angka matriks berikut hanya ilustrasi untuk menunjukkan bagaimana hidden vector diubah menjadi Q total.
 
-Misalkan `q_proj` pada layer ini mempunyai matrix:
+Misalkan `q_proj` pada layer ini mempunyai matriks:
 
 ```text
 Wq =
@@ -567,14 +569,14 @@ Contoh perkalian `o_proj` yang disederhanakan:
 ```text
 gabungan head = [a, b, c, d]
 
-Wo = identity matrix 4 × 4
+Wo = matriks identitas 4 × 4
 
 output attention
 = [a, b, c, d] × Wo
 = [a, b, c, d]
 ```
 
-Pada model nyata, `Wo` bukan identity matrix. `Wo` mencampurkan semua koordinat hasil head dan mengembalikannya ke hidden size. Contoh angka berikut dibuat sederhana:
+Pada model nyata, `Wo` bukan matriks identitas. `Wo` mencampurkan semua koordinat hasil head dan mengembalikannya ke hidden size. Contoh angka berikut dibuat sederhana:
 
 ```text
 gabungan head
@@ -614,7 +616,7 @@ hidden setelah attention
 
 Vector `[0.10, 0.64, 0.24, 1.08]` belum menjadi output penuh layer. Ia masuk ke MLP untuk mendapatkan perubahan tambahan.
 
-Untuk contoh kecil ini, misalkan MLP memakai matrix berikut. Ukurannya `4 × 2` lalu `2 × 4` hanya agar hitungannya pendek; model nyata biasanya memperbesar dimensi tengah.
+Untuk contoh kecil ini, misalkan MLP memakai matriks berikut. Ukurannya `4 × 2` lalu `2 × 4` hanya agar hitungannya pendek; model nyata biasanya memperbesar dimensi tengah.
 
 ```text
 W_up
@@ -749,7 +751,7 @@ vector output lm_head
 → menghasilkan skor token berikutnya
 ```
 
-Pada beberapa model, embedding input dan bobot `lm_head` dapat memakai matrix yang sama. Namun pada penjelasan ini, keduanya dianggap terpisah agar perannya mudah dibedakan.
+Pada beberapa model, embedding input dan bobot `lm_head` dapat memakai matriks yang sama. Namun pada penjelasan ini, keduanya dianggap terpisah agar perannya mudah dibedakan.
 
 `lm_head` menghitung skor kecocokan dengan perkalian titik seluruh dimensi:
 
@@ -967,7 +969,7 @@ Base model tetap sama. Yang dibersihkan adalah konteks percakapan sementara, buk
 
 ### 🟢 Dari mana nilai bobot berasal?
 
-Saat model baru dibuat, matrix bobot—termasuk `Wq`, `Wk`, `Wv`, `Wo`, `W_up`, dan `W_down`—sudah dibuat dan diisi angka acak kecil. Pada tahap training awal (*pretraining*), model membuat prediksi, membandingkannya dengan token target, lalu memperbarui angka-angka bobot tersebut sedikit demi sedikit agar prediksi berikutnya lebih baik.
+Saat model baru dibuat, matriks bobot—termasuk `Wq`, `Wk`, `Wv`, `Wo`, `W_up`, dan `W_down`—sudah dibuat dan diisi angka acak kecil. Pada tahap training awal (*pretraining*), model membuat prediksi, membandingkannya dengan token target, lalu memperbarui angka-angka bobot tersebut sedikit demi sedikit agar prediksi berikutnya lebih baik.
 
 ```text
 angka acak kecil

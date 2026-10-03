@@ -1,4 +1,4 @@
-# [Step 5 — Merge Base Model dan LoRA](#)
+# Step 5 — Merge Base Model dan LoRA
 
 Pada step ini, adapter LoRA hasil training digabungkan ke base model.
 
@@ -12,7 +12,7 @@ Dataset tidak dicari secara langsung ketika model menjawab. Hasil training tersi
 
 Base model asli tidak ditimpa. Model gabungan disimpan di folder baru.
 
-## [Struktur](#)
+## Struktur
 
 ```text
 step5/
@@ -23,7 +23,7 @@ step5/
 └── merged_model/               # model hasil merge
 ```
 
-## [Menjalankan step5](#)
+## Menjalankan step5
 
 Merge model:
 
@@ -58,7 +58,7 @@ python3 /Users/fajri/Projects/testmodel/step5/cek_spesifikasi_model.py
 
 Setelah merge, model dapat dimuat langsung dengan `AutoModelForCausalLM` tanpa `PeftModel`.
 
-## [Spesifikasi model](#)
+## Spesifikasi model
 
 ```text
 Arsitektur       : Qwen3
@@ -69,7 +69,7 @@ Context model    : 40.960 token
 LoRA rank        : 8
 ```
 
-## [Gambaran isi model](#)
+## Gambaran isi model
 
 Analogi sederhananya:
 
@@ -93,7 +93,7 @@ Model
 
 Setiap layer memiliki susunan modul yang sama, tetapi nilai bobotnya berbeda.
 
-## [Bagian 1 — Neural network base model](#)
+## Bagian 1 — Neural network base model
 
 Qwen3 adalah neural network dengan arsitektur Transformer.
 
@@ -142,7 +142,7 @@ Kode neural network Qwen3 berasal dari library `transformers`:
 transformers/models/qwen3/modeling_qwen3.py
 ```
 
-### [Token, aktivasi, dan parameter](#)
+### Token, aktivasi, dan parameter
 
 Setiap token direpresentasikan oleh 1.024 angka.
 
@@ -187,7 +187,7 @@ Jumlah token     → berubah sesuai input
 Jumlah parameter → tetap selama arsitektur tetap
 ```
 
-### [Ukuran arsitektur Qwen3](#)
+### Ukuran arsitektur Qwen3
 
 Angka `1024`, `2048`, dan `3072` ditentukan oleh arsitektur model ini.
 
@@ -228,7 +228,7 @@ MLP       : 1024 standby → 3072 pengolahan → 1024 standby
 
 Kata `standby` hanya analogi untuk hidden size utama antarlayer. Tensor tetap diproses dan nilainya tetap berubah. Pola ukuran ini sudah ditetapkan oleh arsitektur, bukan dipilih secara dinamis.
 
-### [Fungsi modul Qwen](#)
+### Fungsi modul Qwen
 
 `q_proj`, `k_proj`, `v_proj`, `o_proj`, `gate_proj`, `up_proj`, dan `down_proj` adalah **modul neural network milik base model Qwen3**.
 
@@ -279,7 +279,7 @@ gate_proj = memilih informasi yang diteruskan
 down_proj = mengembalikan hasil ke ukuran utama
 ```
 
-### [Cara membaca ukuran matriks](#)
+### Cara membaca ukuran matriks
 
 ```text
 Input size  = jumlah angka yang masuk per token
@@ -314,9 +314,9 @@ Tensor output : [3, 2048]
 
 Jumlah token tetap tiga. Yang berubah adalah jumlah angka per token.
 
-### [Perhitungan parameter base model](#)
+### Perhitungan parameter base model
 
-### [Embedding token](#)
+### Embedding token
 
 Embedding menyimpan 1.024 angka untuk setiap jenis token:
 
@@ -327,7 +327,7 @@ Embedding menyimpan 1.024 angka untuk setiap jenis token:
 
 Embedding berada sebelum layer pertama dan belum termasuk dalam parameter 28 layer.
 
-### [Parameter satu layer](#)
+### Parameter satu layer
 
 Attention:
 
@@ -390,7 +390,7 @@ Final normalization   =       1.024
 Total base model      = 596.049.920 (0.596 B ≈ 0.6 B)
 ```
 
-## [Bagian 2 — Adaptasi LoRA](#)
+## Bagian 2 — Adaptasi LoRA
 
 Neural network base model harus tersedia terlebih dahulu. Setelah itu, LoRA dipasang sebagai parameter tambahan yang akan dilatih.
 
@@ -419,7 +419,7 @@ trainer = SFTTrainer(
 
 Jadi, **neural network dulu, baru LoRA**.
 
-### [LoRA dan rank 8](#)
+### LoRA dan rank 8
 
 Rumus LoRA:
 
@@ -563,7 +563,7 @@ Bobot LoRA → diperbarui berdasarkan dataset
 
 Rank 8 berarti terdapat delapan dimensi perantara pada setiap modul target. Rank bukan jumlah token, jumlah data, atau jumlah fakta dalam dataset.
 
-### [Perhitungan parameter LoRA](#)
+### Perhitungan parameter LoRA
 
 Satu layer:
 
@@ -595,7 +595,7 @@ LoRA hanya sekitar:
 ≈ 0,85% dari parameter base model
 ```
 
-## [Bagian 3 — Proses input user dengan LoRA](#)
+## Bagian 3 — Proses input user dengan LoRA
 
 Setelah LoRA dilatih, input user tetap diproses oleh neural network Qwen3. LoRA memberikan koreksi tambahan pada modul yang menjadi target training.
 
@@ -634,7 +634,7 @@ Saat training  → dataset mengubah bobot LoRA
 Saat menjawab  → input user diproses menggunakan bobot hasil training
 ```
 
-## [Bagian 4 — Sebelum dan sesudah merge](#)
+## Bagian 4 — Sebelum dan sesudah merge
 
 Sebelum merge:
 
@@ -670,7 +670,7 @@ Context model → tetap
 Nilai bobot   → berubah
 ```
 
-### [Mengapa jumlah token tetap sama?](#)
+### Mengapa jumlah token tetap sama?
 
 LoRA tidak menambahkan token baru ke tokenizer atau vocabulary. LoRA hanya mempelajari perubahan bobot melalui jalur tambahan.
 
@@ -706,7 +706,7 @@ Nilai bobot, probabilitas token, dan kecenderungan jawaban
 
 Jadi, model dapat menghasilkan jawaban berbeda walaupun jumlah token dan bentuk arsitekturnya tetap sama.
 
-## [Mengapa karakter model berbeda?](#)
+## Mengapa karakter model berbeda?
 
 ```text
 Arsitektur = bentuk dan susunan otak
@@ -717,7 +717,7 @@ Prompt     = pertanyaan yang diberikan
 
 Model dengan struktur mirip dapat menjawab berbeda karena bobot dan data latihnya berbeda.
 
-## [Kesimpulan](#)
+## Kesimpulan
 
 ```text
 Fine-tuning = membuat jawaban lebih condong ke pola dataset

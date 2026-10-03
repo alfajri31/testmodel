@@ -1,4 +1,4 @@
-# [Step 8 — Continue Training dari Merged Model](#)
+# Step 8 — Continue Training dari Merged Model
 
 Step ini menunjukkan cara menambah training setelah model tahap sebelumnya sudah di-*merge*. Model tidak kembali memulai dari `/Users/fajri/Projects/mytestmodel`.
 
@@ -30,7 +30,7 @@ merge_continue.py
 step8/merged_model
 ```
 
-## [Mengapa ini tidak mulai dari nol?](#)
+## Mengapa ini tidak mulai dari nol?
 
 `step5/merged_model` sudah memuat perubahan bobot dari training tahap pertama. Karena `train_continue.py` memuat folder itu, semua pengetahuan dan pola hasil merge sebelumnya tetap menjadi titik awal.
 
@@ -54,7 +54,7 @@ merged tahap pertama
 
 Jadi adapter tahap kedua memang mulai dengan nilai awal baru, tetapi model yang dipakainya sudah bukan base model awal. Ia melanjutkan dari bobot merged tahap pertama.
 
-## [Struktur folder](#)
+## Struktur folder
 
 ```text
 step8/
@@ -67,7 +67,7 @@ step8/
 └── merged_model/           # Dibuat setelah merge
 ```
 
-## [Dataset contoh](#)
+## Dataset contoh
 
 Dataset pada step ini sengaja kecil. Dataset awal Step 5 mengajarkan pola bahwa Alfajri adalah programmer Java. Dataset Step 8 menambahkan informasi baru bahwa Alfajri sedang mempelajari machine learning.
 
@@ -83,7 +83,7 @@ Alfajri sedang belajar apa?
 
 Hasil dapat berubah karena dataset contoh sangat kecil. Tujuannya adalah melihat alur continue training, bukan membuat model pengetahuan yang stabil.
 
-## [Menjalankan](#)
+## Menjalankan
 
 Pastikan Step 5 sudah mempunyai model hasil merge:
 
@@ -127,7 +127,7 @@ python3 step8/test_model.py
 /exit  → tutup program
 ```
 
-## [Continue training dan resume checkpoint berbeda](#)
+## Continue training dan resume checkpoint berbeda
 
 Ada dua istilah yang mudah tertukar:
 
@@ -145,7 +145,7 @@ Step 8 memakai cara kedua.
 
 Jika training tahap kedua terhenti di tengah jalan dan ingin melanjutkan tepat dari step terakhir, gunakan checkpoint yang dibuat di `step8/output/checkpoint-*` dengan `trainer.train(resume_from_checkpoint=...)`. Contoh ini sengaja dibuat sederhana dan tidak mengaktifkan resume otomatis.
 
-## [Tahap berikutnya](#)
+## Tahap berikutnya
 
 Jika ingin menambah training lagi setelah Step 8, jadikan hasil merge Step 8 sebagai sumber model berikutnya:
 

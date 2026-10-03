@@ -30,6 +30,18 @@ Token berikutnya dipilih
 Token ditambahkan ke context window dan proses diulang
 ```
 
+Urutan membaca dokumen ini:
+
+```text
+1. Token dan embedding
+2. Context window dan attention
+3. Bentuk matriks bobot
+4. q_proj, k_proj, v_proj, dan o_proj
+5. MLP, residual, dan contextual vector akhir
+6. lm_head dan next token
+7. JSONL, training, koreksi bobot, akurasi, validation loss, lalu inference
+```
+
 ## 🟢 1. Token Menjadi Embedding
 
 Anggap tokenizer mempunyai pemetaan berikut:
@@ -79,6 +91,8 @@ Model nyata biasanya menggunakan ratusan atau ribuan dimensi. Contoh dua dimensi
 
 Jika model sedang memproses satu token, bentuk vector tersebut dapat ditulis sebagai `[1 × 1.024]`: satu baris yang berisi 1.024 angka. Angka `1` menunjukkan jumlah token yang sedang ditulis pada contoh, sedangkan `1.024` menunjukkan jumlah angka untuk setiap token.
 
+Dokumen ini menggunakan konvensi vector sebagai baris, sehingga perkalian ditulis `vector × matriks`. Implementasi library tertentu dapat memakai konvensi kolom, tetapi konsepnya sama.
+
 ```text
 token "bisa"
 → embedding awal [1.024 angka]
@@ -89,6 +103,17 @@ token "bisa"
 ```
 
 Jadi hidden size bukan ukuran seluruh matriks bobot. Hidden size adalah panjang satu vector token pada jalur utama Transformer.
+
+### 🟢 Mengapa vector memiliki banyak dimensi?
+
+Jumlah dimensi menyediakan ruang representasi untuk setiap token. Satu token tetap memiliki satu vector, tetapi vector tersebut memiliki banyak angka yang dapat bekerja bersama untuk merepresentasikan pola dan hubungannya dengan token lain.
+
+```text
+“bisa” → satu vector dengan banyak dimensi
+       → dapat diproses bersama konteks “saya”, “berenang”, atau “racun”
+```
+
+Dimensi tidak memiliki arti tetap seperti `dimensi 1 = kemampuan` atau `dimensi 2 = racun`. Makna muncul dari kombinasi seluruh dimensi dan hubungan vector antar-token. Karena itu, hidden size yang lebih besar menyediakan ruang yang lebih luas untuk membedakan banyak pola, tetapi juga membutuhkan lebih banyak memori dan perhitungan.
 
 Matriks bobot memakai hidden size sebagai ukuran input atau outputnya. Contoh pada Qwen3-0.6B:
 
@@ -110,8 +135,6 @@ Token `"bisa"` memiliki embedding awal yang sama pada kedua kalimat:
 "Saya bisa"         → "bisa" = [0.0, 1.0]
 "Saya terkena bisa" → "bisa" = [0.0, 1.0]
 ```
-
-Vector mempunyai lebih dari satu dimensi agar model memiliki ruang untuk mempelajari banyak pola. Namun satu dimensi tidak memiliki arti tetap seperti `kemampuan` atau `racun`. Makna muncul dari kombinasi seluruh vector dan hubungannya dengan vector lain.
 
 ## 🟢 2. Attention Membaca Konteks
 
@@ -158,7 +181,70 @@ Karena konteksnya berbeda, hasilnya juga dapat berbeda:
 → next token dapat berupa "ular"
 ```
 
-Bagian 2 hanya memberikan gambaran besar. Perhitungan Q, K, V, setiap head, dan O dijelaskan secara berurutan pada Bagian 3 sampai 7.
+### 🟢 Makna tidak tertulis sebagai label di dalam vector
+
+Di dalam vector tidak ada tulisan atau label eksplisit seperti:
+
+```text
+dimensi 1 = kemampuan
+dimensi 2 = racun
+```
+
+Yang ada hanya angka. Namun, angka-angka tersebut dipelajari dari banyak contoh training sehingga kombinasi tertentu dapat mengarahkan model ke pola yang berbeda.
+
+Contoh dua dimensi sederhana:
+
+```text
+Q_bisa       = [2, 5]
+K_saya       = [3, 6]
+K_terkena    = [4, 7]
+```
+
+Perbandingan per dimensi dapat ditulis sebagai Hadamard product:
+
+```text
+Q_bisa ⊙ K_saya
+= [2×3, 5×6]
+= [6, 30]
+
+Q_bisa ⊙ K_terkena
+= [2×4, 5×7]
+= [8, 35]
+```
+
+Hasil `[6, 30]` dan `[8, 35]` bukan label kemampuan atau racun. Hasil tersebut adalah angka sementara untuk menghitung kecocokan. Jika dijumlahkan:
+
+```text
+score_saya    = 6 + 30 = 36
+score_terkena = 8 + 35  = 43
+```
+
+Skor kemudian diubah menjadi bobot relevansi. Bobot itu digunakan untuk mencampurkan `Value` setiap token, sehingga terbentuk contextual vector baru.
+
+```text
+Q dan K
+→ skor relevansi
+→ bobot relevansi
+→ bobot × Value
+→ contextual vector
+→ lm_head memberi skor “berenang”, “ular”, dan token lain
+```
+
+Pada konteks:
+
+```text
+"Saya bisa berenang"
+```
+
+hasil perhitungan dapat lebih mendukung token yang berhubungan dengan kemampuan. Pada konteks:
+
+```text
+"Saya terkena bisa ular"
+```
+
+hasilnya dapat lebih mendukung token yang berhubungan dengan racun. “Kemampuan” dan “racun” adalah interpretasi manusia terhadap pola angka tersebut, bukan label yang tertulis di dalam vector.
+
+Contoh di atas memberikan intuisi tentang bagaimana konteks mengarahkan prediksi. Perhitungan lengkap Q, K, V, setiap head, dan O dijelaskan secara berurutan pada Bagian 3 sampai 7.
 
 ## 🟢 3. Gambaran projection dalam Transformer
 
@@ -201,6 +287,20 @@ W_gate  [1.024 × 3.072]   → ruang MLP
 W_up    [1.024 × 3.072]   → ruang MLP
 W_down  [3.072 × 1.024]   → kembali ke hidden size
 ```
+
+### 🟢 Mengapa matriks bobot memiliki banyak baris dan kolom?
+
+Matriks bobot menghubungkan setiap angka input dengan setiap koordinat output. Jika vector input memiliki 2 angka dan output yang diinginkan memiliki 3 angka, bentuk bobotnya adalah `2 × 3`:
+
+```text
+input  [1 × 2]
+× W    [2 × 3]
+= hasil [1 × 3]
+```
+
+Setiap dari 3 koordinat output menerima pengaruh dari 2 angka input. Pada model Qwen, `Wq` berukuran `1.024 × 2.048` karena 1.024 angka input perlu diubah menjadi 2.048 angka Q.
+
+Jadi ukuran matriks ditentukan oleh arsitektur dan harus cocok untuk perkalian. Saat training, ukurannya tetap, sedangkan nilai di dalam setiap baris dan kolom diperbarui.
 
 Contoh hitungan di bagian berikut memakai empat dimensi agar mudah dihitung. Bentuk matriksnya disederhanakan, tetapi urutan prosesnya sama.
 
@@ -889,21 +989,46 @@ probabilitas rendah
 
 Pengaturan seperti `temperature`, `top-k`, dan `top-p` menentukan seberapa bervariasi pilihan tersebut. Untuk keluaran ketat seperti klasifikasi, JSON, atau format operasional, greedy decoding atau temperature sangat rendah biasanya lebih sesuai.
 
-## 🟢 10. Mengapa Model Bisa Melakukan Ini?
+## 🟢 10. Training, validation, dan inference
 
-Saat training, model melihat banyak pola bahasa dan mencoba memprediksi token berikutnya:
+### 🟢 JSONL, role, dan target training
+
+Pada chat fine-tuning, JSONL dapat berisi role `user` dan `assistant`:
+
+```jsonl
+{"messages":[{"role":"user","content":"Apa ibu kota Indonesia?"},{"role":"assistant","content":"Jakarta."}]}
+```
+
+Peran masing-masing:
+
+```text
+role=user
+→ pertanyaan atau input contoh
+
+role=assistant
+→ jawaban target yang ingin dipelajari model
+```
+
+Role tersebut kemudian diubah menjadi token oleh chat template. Model membaca bagian user, lalu belajar memprediksi token-token pada jawaban assistant satu demi satu:
+
+```text
+Input  : "Apa ibu kota Indonesia?"
+Target : "Jakarta."
+```
+
+Role bukan bobot dan bukan jawaban yang langsung disimpan di dalam model. Role hanya membantu memberi struktur pada contoh percakapan. Yang melatih bobot adalah proses prediksi, perhitungan loss, dan pembaruan parameter.
+
+Contoh pola lain:
 
 ```text
 Input  : "Saya bisa"
 Target : "berenang"
-```
 
-```text
 Input  : "Saya terkena bisa"
 Target : "ular"
 ```
 
-Jika prediksinya salah, proses training memperbaiki kemampuan model agar target yang benar mendapatkan probabilitas lebih tinggi. Detail parameter yang diperbarui belum dibahas pada pengantar ini.
+Jika prediksinya tidak sesuai target, proses training memperbaiki bobot neural network agar target yang benar mendapat probabilitas lebih tinggi.
 
 ### 🟢 Training vs inference
 
@@ -943,6 +1068,47 @@ Training  → prediksi + loss + pembaruan bobot
 Inference → prediksi saja + bobot tetap
 ```
 
+### 🟢 Akurasi dan validation loss
+
+Keduanya memakai target, tetapi mengukur hal yang berbeda.
+
+```text
+Akurasi
+→ apakah token dengan probabilitas tertinggi sama dengan target?
+
+Loss
+→ seberapa besar probabilitas yang diberikan kepada target?
+```
+
+Contoh targetnya adalah `"ular"`:
+
+```text
+ular     → 51%
+berenang → 49%
+```
+
+Token dengan probabilitas tertinggi adalah `"ular"`, sehingga prediksi ini dihitung benar oleh akurasi. Namun model masih ragu, sehingga loss-nya lebih tinggi daripada contoh berikut:
+
+```text
+ular     → 95%
+berenang → 3%
+mobil    → 2%
+```
+
+Contoh kedua juga benar menurut akurasi, tetapi memiliki loss lebih rendah karena model lebih yakin pada target yang benar.
+
+`Validation loss` adalah rata-rata loss pada data validasi, yaitu data yang tidak dipakai untuk memperbarui bobot secara langsung. Nilai ini membantu memeriksa apakah model bekerja baik pada contoh baru, bukan hanya menghafal data training.
+
+```text
+loss training rendah
+→ model cocok dengan data latihan
+
+validation loss rendah
+→ model juga mampu menangani data yang belum dilihat saat update bobot
+```
+
+Jadi checkpoint terbaik biasanya dipilih berdasarkan validation loss yang rendah atau metrik validasi lain yang sesuai, bukan dengan mengambil satu bobot tertentu. Seluruh matriks bobot dari checkpoint tersebut digunakan saat inference.
+
 ### 🟢 Context window: ingatan kerja sementara
 
 Selama percakapan berlangsung, token baru ditambahkan ke context window. Model lalu menghitung contextual vector baru agar jawaban berikutnya dapat mempertimbangkan percakapan sebelumnya.
@@ -967,16 +1133,31 @@ context window lama dihapus
 
 Base model tetap sama. Yang dibersihkan adalah konteks percakapan sementara, bukan bobot atau pengetahuan permanen model.
 
-### 🟢 Dari mana nilai bobot berasal?
+### 🟢 Dari mana nilai bobot berasal dan bagaimana neural network memperbaikinya?
 
-Saat model baru dibuat, matriks bobot—termasuk `Wq`, `Wk`, `Wv`, `Wo`, `W_up`, dan `W_down`—sudah dibuat dan diisi angka acak kecil. Pada tahap training awal (*pretraining*), model membuat prediksi, membandingkannya dengan token target, lalu memperbarui angka-angka bobot tersebut sedikit demi sedikit agar prediksi berikutnya lebih baik.
+Saat model baru dibuat, matriks bobot—termasuk `Wq`, `Wk`, `Wv`, `Wo`, `W_up`, dan `W_down`—sudah dibuat dan diisi angka acak kecil. Neural network kemudian menggunakan bobot tersebut untuk membuat prediksi. Prediksi dibandingkan dengan token target, lalu loss menunjukkan seberapa besar kesalahannya.
 
 ```text
 angka acak kecil
 → training awal berkali-kali
+→ loss dan backpropagation menghitung arah koreksi
+→ optimizer memperbarui nilai bobot sedikit demi sedikit
 → bobot mempelajari pola dari data latih
 → bobot tersimpan dalam checkpoint / base model
 ```
+
+Inilah perilaku koreksi bobot pada neural network:
+
+```text
+input + bobot
+→ prediksi
+→ bandingkan dengan target
+→ hitung loss
+→ backpropagation menghitung kontribusi kesalahan pada setiap bobot
+→ optimizer mengubah nilai bobot
+```
+
+Jika model memprediksi `“berenang”` padahal targetnya `“ular”`, bobot tidak diganti dengan jawaban `“ular”`. Bobot hanya digeser sedikit agar pola konteks tersebut lebih mungkin menghasilkan `“ular”` pada pengulangan berikutnya. Koreksi ini terjadi saat training, bukan saat inference.
 
 Setelah training selesai, bobot tersebut dipakai ulang saat inference (model sedang menjawab). Misalnya, `W_up` dan `W_down` dipakai untuk mengolah hidden vector pada setiap layer, tetapi nilai bobotnya tidak berubah ketika model menjawab.
 

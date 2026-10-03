@@ -1,4 +1,4 @@
-# Step 10 — Cek Spesifikasi Model
+# 🟢 Step 10 — Cek Spesifikasi Model
 
 Step ini membaca spesifikasi model hasil continue training Step 8. Script hanya membaca `config.json` dan ukuran file bobot; ia tidak melakukan training dan tidak menjalankan inference.
 
@@ -10,7 +10,7 @@ Script memilih model terbaru yang tersedia dengan urutan berikut:
 3. mytestmodel         → base model awal
 ```
 
-## Menjalankan
+## 🟢 Menjalankan
 
 Jalankan:
 
@@ -30,7 +30,7 @@ Script menampilkan:
 - jumlah serta ukuran file safetensors
 ```
 
-## Bentuk model yang diperiksa
+## 🟢 Bentuk model yang diperiksa
 
 Model hasil Step 8 tetap memakai arsitektur Qwen3-0.6B. Continue training dan merge mengubah nilai bobot melalui LoRA, tetapi tidak mengubah jumlah layer atau bentuk matrix.
 
@@ -45,7 +45,7 @@ Qwen3ForCausalLM
 └── lm_head
 ```
 
-## Parameter Qwen3-0.6B
+## 🟢 Parameter Qwen3-0.6B
 
 Parameter adalah angka bobot yang tersimpan dalam model. Parameter bukan token dan bukan context window.
 
@@ -58,7 +58,7 @@ Intermediate MLP  = 3.072
 Transformer layer = 28
 ```
 
-### Embedding table
+### 🟢 Embedding table
 
 Embedding table hanya ada satu kali untuk seluruh model:
 
@@ -68,7 +68,7 @@ Embedding table hanya ada satu kali untuk seluruh model:
 ≈ 155,6 juta parameter
 ```
 
-### Attention dalam satu layer
+### 🟢 Attention dalam satu layer
 
 ```text
 q_proj = 1.024 × 2.048 = 2.097.152
@@ -79,7 +79,7 @@ o_proj = 2.048 × 1.024 = 2.097.152
 attention per layer = 6.291.456
 ```
 
-### MLP dalam satu layer
+### 🟢 MLP dalam satu layer
 
 ```text
 gate_proj = 1.024 × 3.072 = 3.145.728
@@ -109,7 +109,7 @@ total                  ≈ 596 juta
 
 `lm_head` memakai embedding table yang sama (`tie_word_embeddings=true`). Karena bobotnya dipakai bersama, `lm_head` tidak menambah embedding table kedua.
 
-## Parameter dan memori inference
+## 🟢 Parameter dan memori inference
 
 Angka `0.6B` menunjukkan jumlah bobot model. Saat model menjawab, RAM atau VRAM juga dipakai untuk context window dan perhitungan inference:
 
@@ -123,7 +123,7 @@ total memori inference
 
 Bobot model tetap dimuat selama model aktif. Context window dan KV cache bertambah ketika percakapan atau jawaban makin panjang. Saat chat di-*clear*, context dan cache lama dapat dilepas, sedangkan bobot model tetap ada di memori.
 
-## Mengapa jumlah parameter tidak berubah setelah merge?
+## 🟢 Mengapa jumlah parameter tidak berubah setelah merge?
 
 LoRA menambahkan perubahan kecil ke matrix bobot yang sudah ada. Saat merge, perubahan LoRA dijumlahkan ke bobot model sebelumnya:
 

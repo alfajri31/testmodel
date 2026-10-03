@@ -1,4 +1,4 @@
-# Step 9 — RAG dari MongoDB untuk Menjawab Data yang Tidak Ada di Model
+# 🟢 Step 9 — RAG dari MongoDB untuk Menjawab Data yang Tidak Ada di Model
 
 Step ini menunjukkan cara model Step 8 menjawab daftar pemain Inter Miami CF ketika fakta pemain tidak diberikan melalui dataset fine-tuning Step 8. Sumber fakta saat inference adalah MongoDB.
 
@@ -10,7 +10,7 @@ MongoDB RAG memberi fakta
 → model membuat jawaban natural
 ```
 
-## Model dan database yang dipakai
+## 🟢 Model dan database yang dipakai
 
 ```text
 Model jawaban
@@ -30,7 +30,7 @@ Collection tersebut adalah database yang sama dengan `/Users/fajri/Projects/foot
 
 URI MongoDB sudah disimpan statik pada bagian konfigurasi `test_model_rag.py`, mengikuti koneksi private yang dipakai project ini.
 
-## Bentuk data di MongoDB
+## 🟢 Bentuk data di MongoDB
 
 Sebelum RAG dipakai, data sepak bola telah diubah menjadi natural text dan embedding. Bentuk sederhananya:
 
@@ -54,7 +54,7 @@ embedding
 
 Vector di atas dibuat oleh embedding model, bukan oleh `lm_head` dan bukan contextual vector saat LLM menjawab.
 
-## Alur ketika user bertanya
+## 🟢 Alur ketika user bertanya
 
 Misalnya user bertanya:
 
@@ -90,7 +90,7 @@ query vector · document vector
 
 Karena embedding query dan dokumen dinormalisasi, dot product pada script setara dengan cosine similarity.
 
-## Mengapa model dapat menyebut nama yang tidak ada di bobotnya?
+## 🟢 Mengapa model dapat menyebut nama yang tidak ada di bobotnya?
 
 Contoh nama seperti Lionel Messi, Luis Suárez, atau Rodrigo De Paul tidak perlu ada dalam dataset Step 8 agar dapat disebut dalam jawaban ini. Nama tersebut dapat saja pernah muncul di data pretraining umum, tetapi Step 9 tidak mengandalkannya sebagai sumber fakta.
 
@@ -126,7 +126,7 @@ LLM inference
 → lm_head memilih next token
 ```
 
-## Menjalankan contoh
+## 🟢 Menjalankan contoh
 
 Pastikan hasil merge Step 8 sudah tersedia:
 
@@ -157,7 +157,7 @@ Perintah interaktif:
 /exit → menutup program
 ```
 
-## Jika similarity terlalu rendah
+## 🟢 Jika similarity terlalu rendah
 
 Script hanya memakai dokumen jika similarity setidaknya `0.65`:
 
@@ -167,6 +167,6 @@ MIN_SIMILARITY = 0.65
 
 Jika skor lebih rendah, script tidak mengirim dokumen tersebut kepada LLM dan memberi jawaban bahwa informasi tidak cukup. Nilai ini adalah titik awal; lihat hasil `/rag`, lalu sesuaikan berdasarkan data sebenarnya.
 
-## Batas contoh ini
+## 🟢 Batas contoh ini
 
 Step ini mengambil satu dokumen terbaik (`TOP_K = 1`) dan meminta LLM merangkai jawaban. Untuk daftar pemain yang harus lengkap 100%, aplikasi lebih baik mengembalikan daftar langsung dari database atau memakai query MongoDB terstruktur. LLM dapat menyingkat atau tidak menampilkan sebagian nama ketika menulis ulang text panjang.

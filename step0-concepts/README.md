@@ -156,9 +156,9 @@ Karena konteksnya berbeda, hasilnya juga dapat berbeda:
 → next token dapat berupa "ular"
 ```
 
-Bagian 2 hanya memberikan gambaran besar. Perhitungan Q, K, V, setiap head, dan O dijelaskan secara berurutan pada Bagian 3.
+Bagian 2 hanya memberikan gambaran besar. Perhitungan Q, K, V, setiap head, dan O dijelaskan secara berurutan pada Bagian 3 sampai 7.
 
-## 🟢 3. Proses `q_proj`, `k_proj`, `v_proj`, dan `o_proj`
+## 🟢 3. Gambaran projection dalam Transformer
 
 Setiap projection menggunakan matriks bobot yang sudah tersimpan di base model. Matriks tersebut dipakai berulang pada setiap input, tetapi nilainya tidak berubah saat inference. Nilai bobot dan proses pembelajarannya dibahas pada Bagian 6.
 
@@ -202,7 +202,7 @@ W_down  [3.072 × 1.024]   → kembali ke hidden size
 
 Contoh hitungan di bagian berikut memakai empat dimensi agar mudah dihitung. Bentuk matriksnya disederhanakan, tetapi urutan prosesnya sama.
 
-### 🟢 3.2 `q_proj`: membuat Query dari token terakhir
+## 🟢 4. `q_proj`: membuat Query dari token terakhir
 
 Untuk memprediksi token setelah prompt, Query yang menjadi fokus berasal dari posisi token terakhir `"bisa"`:
 
@@ -306,7 +306,7 @@ hidden_bisa dari embedding/layer sebelumnya
 → Head 2 [0.0, 1.0]
 ```
 
-### 🟢 3.3 `k_proj`: membuat Key untuk semua token
+## 🟢 5. `k_proj`: membuat Key untuk semua token
 
 Setiap token yang dapat dilihat menyediakan Key pada setiap head.
 
@@ -354,7 +354,7 @@ Bukan:
 Q_bisa Head 1 · K token Head 2 ❌
 ```
 
-### 🟢 3.4 Menghitung relevansi Head 1
+### 🟢 5.1 Menghitung relevansi Head 1
 
 ```text
 Q_bisa Head 1 = [1.0, 0.0]
@@ -387,7 +387,7 @@ bisa    → 14%
 
 Head 1 paling memperhatikan `"terkena"`.
 
-### 🟢 3.5 Menghitung relevansi Head 2
+### 🟢 5.2 Menghitung relevansi Head 2
 
 ```text
 Q_bisa Head 2 = [0.0, 1.0]
@@ -420,7 +420,7 @@ bisa    → sekitar 30.7%
 
 Head 2 paling memperhatikan `"Saya"`. Dengan demikian, dua head dapat menghasilkan pola relevansi berbeda untuk context window yang sama.
 
-### 🟢 3.6 `v_proj`: membuat Value lalu mencampurkan informasi
+## 🟢 6. `v_proj`: membuat Value lalu mencampurkan informasi
 
 Misalkan `v_proj` menghasilkan Value berikut. Angkanya adalah ilustrasi hasil projection, bukan vector yang dibuat acak saat inference.
 
@@ -491,7 +491,7 @@ v_proj menghasilkan V
 
 V tidak dibuat khusus untuk menghasilkan KV cache. KV cache hanya menyimpan hasil K dan V yang sudah dibuat.
 
-### 🟢 3.7 `o_proj`: menggabungkan semua head
+## 🟢 7. `o_proj`: menggabungkan semua head
 
 Output kedua head disambungkan, bukan dijumlahkan:
 
@@ -639,11 +639,11 @@ hidden setelah attention + output_MLP → contextual vector baru untuk layer ber
 output layer terakhir → contextual vector akhir `h` → lm_head
 ```
 
-## 🟢 4. `lm_head` Memprediksi Token Berikutnya
+## 🟢 8. `lm_head` Memprediksi Token Berikutnya
 
 Contextual vector akhir belum berupa kata. `lm_head` membandingkan `h` dengan vector output seluruh token dalam vocabulary.
 
-Lanjutkan contoh yang sama dari Bagian 3:
+Lanjutkan contoh yang sama dari Bagian 3 sampai 7:
 
 ```text
 contextual vector akhir pada token "bisa"
@@ -709,7 +709,7 @@ probabilitas setiap token
 satu token berikutnya
 ```
 
-## 🟢 5. Bagaimana Satu Token Menjadi Rangkaian Kalimat?
+## 🟢 9. Bagaimana Satu Token Menjadi Rangkaian Kalimat?
 
 `lm_head` hanya memilih **satu token berikutnya**, bukan langsung membuat satu kalimat lengkap.
 
@@ -808,7 +808,7 @@ probabilitas rendah
 
 Pengaturan seperti `temperature`, `top-k`, dan `top-p` menentukan seberapa bervariasi pilihan tersebut. Untuk keluaran ketat seperti klasifikasi, JSON, atau format operasional, greedy decoding atau temperature sangat rendah biasanya lebih sesuai.
 
-## 🟢 6. Mengapa Model Bisa Melakukan Ini?
+## 🟢 10. Mengapa Model Bisa Melakukan Ini?
 
 Saat training, model melihat banyak pola bahasa dan mencoba memprediksi token berikutnya:
 

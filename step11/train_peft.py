@@ -1,9 +1,10 @@
 """Latih adapter LoRA Step 11 dari base model, tanpa merge."""
 
 from pathlib import Path
+import json
 
 import torch
-from datasets import load_dataset
+from datasets import Dataset
 from peft import LoraConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import SFTConfig, SFTTrainer
@@ -12,6 +13,9 @@ from trl import SFTConfig, SFTTrainer
 STEP_DIR = Path(__file__).resolve().parent
 BASE_MODEL_PATH = Path("/Users/fajri/Projects/mytestmodel")
 DATASET_PATH = STEP_DIR / "dataset" / "dataset.jsonl"
+RESPONSE_DATASET_PATH = STEP_DIR / "dataset" / "response.jsonl"
+STYLE_DATASET_PATH = STEP_DIR / "dataset" / "response_style_long.example.jsonl"
+MULTI_VALUE_DATASET_PATH = STEP_DIR / "dataset" / "multi_value.example.jsonl"
 OUTPUT_PATH = STEP_DIR / "output"
 
 if not (BASE_MODEL_PATH / "config.json").is_file():
@@ -23,7 +27,50 @@ model = AutoModelForCausalLM.from_pretrained(
 )
 model.config.use_cache = False
 model.enable_input_require_grads()
-dataset = load_dataset("json", data_files=str(DATASET_PATH), split="train")
+records = [
+    json.loads(line)
+    for line in DATASET_PATH.read_text().splitlines()
+    if line.strip()
+]
+if RESPONSE_DATASET_PATH.is_file():
+    records.extend(
+        {
+            "messages": [
+                {"role": "user", "content": item["user"]},
+                {"role": "assistant", "content": item["assistant"]},
+            ]
+        }
+        for item in (
+            json.loads(line)
+            for line in RESPONSE_DATASET_PATH.read_text().splitlines()
+            if line.strip()
+        )
+    )
+if STYLE_DATASET_PATH.is_file():
+    for line in STYLE_DATASET_PATH.read_text().splitlines():
+        if not line.strip():
+            continue
+        style_record = json.loads(line)
+        records.append(
+            {
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": f"Gunakan gaya {style_record['style']}.",
+                    },
+                    {"role": "user", "content": style_record["user"]},
+                    {"role": "assistant", "content": style_record["assistant"]},
+                ]
+            }
+        )
+if MULTI_VALUE_DATASET_PATH.is_file():
+    records.extend(
+        json.loads(line)
+        for line in MULTI_VALUE_DATASET_PATH.read_text().splitlines()
+        if line.strip()
+    )
+dataset = Dataset.from_list(records)
+print(f"Total contoh training Step 11: {len(dataset)}")
 
 trainer = SFTTrainer(
     model=model,

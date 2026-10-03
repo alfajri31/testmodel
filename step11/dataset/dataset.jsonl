@@ -1,2 +1,4 @@
 {"messages":[{"role":"user","content":"Bagaimana RAG dan model bekerja bersama?"},{"role":"assistant","content":"RAG mengambil fakta dari database, lalu model membaca fakta itu di context window dan menyusun jawaban."}]}
-{"messages":[{"role":"user","content":"Apa gaya jawaban yang tersedia?"},{"role":"assistant","content":"Contoh gaya jawaban yang tersedia adalah tegas, moody, dan profesional."}]}
+{"messages":[{"role":"user","content":"Apa gaya jawaban yang tersedia?"},{"role":"assistant","content":"Contoh gaya jawaban yang tersedia adalah common, moody, profesional, dan comedian."}]}
+{"messages":[{"role":"user","content":"Bagaimana gaya moody menjawab?"},{"role":"assistant","content":"Dengan gaya dramatis, emosional, dan sedikit lebay, tetapi tetap tidak keluar dari fakta yang tersedia."}]}
+{"messages":[{"role":"user","content":"Bagaimana gaya comedian menjawab?"},{"role":"assistant","content":"Dengan humor ringan dan punchline singkat, sambil tetap menjaga fakta agar akurat."}]}

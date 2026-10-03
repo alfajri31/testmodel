@@ -42,30 +42,49 @@ ADAPTER_PATH = (
 )
 
 
+RESET = "\033[0m"
+RAG_COLOR = "\033[36m"      # cyan: hasil penemuan/retrieval RAG
+AI_COLOR = "\033[32m"       # green: jawaban yang dirangkai AI
+INFO_COLOR = "\033[90m"     # gray: status proses
+CONTEXT_COLOR = "\033[33m"  # yellow: data yang masuk context window
+
+
+def colored(color, text):
+    """Warnai output jika terminal mendukung ANSI escape code."""
+    return f"{color}{text}{RESET}"
+
+
 STYLE_INSTRUCTIONS = {
-    "tegas": "Jawab langsung, singkat, dan tegas.",
-    "moody": (
-        "Gunakan gaya reflektif dan agak panjang, tetapi tetap relevan. "
-        "Jangan mengulang isi tanpa tujuan dan jangan menambah fakta."
-    ),
-    "profesional": (
-        "Gunakan gaya profesional, terstruktur, dan jelas. "
-        "Gunakan hanya fakta dari referensi."
-    ),
+    "common": "Gunakan gaya common.",
+    "tegas": "Gunakan gaya common.",
+    "moody": "Gunakan gaya moody.",
+    "profesional": "Gunakan gaya profesional.",
+    "comedian": "Gunakan gaya comedian.",
+}
+DEFAULT_STYLE = "profesional"
+STYLE_GENERATION = {
+    "common": {"do_sample": False},
+    "tegas": {"do_sample": False},
+    "moody": {"do_sample": False},
+    "profesional": {"do_sample": False},
+    "comedian": {"do_sample": False},
 }
 
 
 def generate_answer_with_style(question, rag_context, style, tokenizer, model):
     """Buat jawaban dengan fakta RAG dan gaya bahasa yang dipilih."""
+    active_style = style if style in STYLE_INSTRUCTIONS else DEFAULT_STYLE
     messages = [
         {
             "role": "system",
             "content": (
-                "Kamu adalah asisten data sepak bola. Gunakan REFERENSI RAG "
-                "sebagai sumber fakta utama. Jangan membuat nama pemain, klub, "
-                "atau statistik baru. Jika referensi tidak cukup, katakan bahwa "
-                "datanya tidak tersedia.\n\n"
-                f"GAYA JAWABAN: {STYLE_INSTRUCTIONS[style]}\n\n"
+                "Jawab berdasarkan referensi RAG yang diberikan. Jika fakta "
+                "tidak tersedia di referensi, katakan bahwa informasinya tidak "
+                "ditemukan. Jika referensi berisi daftar, pertahankan semua "
+                "item dan jangan meringkasnya. Gunakan gaya berikut: "
+                f"{STYLE_INSTRUCTIONS[active_style]}"
+                "\nJika gaya tidak tersedia, gunakan gaya profesional."
+                "\n\n"
                 f"<REFERENSI_RAG>\n{rag_context}\n</REFERENSI_RAG>"
             ),
         },
@@ -80,13 +99,17 @@ def generate_answer_with_style(question, rag_context, style, tokenizer, model):
     )
     inputs = tokenizer(prompt, return_tensors="pt")
 
+    generation_options = {
+        "max_new_tokens": 260,
+        "pad_token_id": tokenizer.eos_token_id,
+        **STYLE_GENERATION.get(
+            active_style,
+            STYLE_GENERATION[DEFAULT_STYLE],
+        ),
+    }
+
     with torch.inference_mode():
-        outputs = model.generate(
-            **inputs,
-            max_new_tokens=260,
-            do_sample=False,
-            pad_token_id=tokenizer.eos_token_id,
-        )
+        outputs = model.generate(**inputs, **generation_options)
 
     new_tokens = outputs[0][inputs["input_ids"].shape[1] :]
     return tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
@@ -130,9 +153,9 @@ def main():
     try:
         collection = client[DATABASE_NAME][COLLECTION_NAME]
         descriptions, vectors = load_rag_documents(collection)
-        print(f"[3/5] RAG siap: {len(descriptions):,} dokumen tersedia.")
+        print(colored(INFO_COLOR, f"[3/5] RAG siap: {len(descriptions):,} dokumen tersedia."))
 
-        style = "profesional"
+        style = DEFAULT_STYLE
         print("\nKetik pertanyaan. Ketik /style untuk mengganti gaya, /exit untuk keluar.")
         while True:
             question = input("\nUser: ").strip()
@@ -142,16 +165,17 @@ def main():
                 break
             if question.lower() == "/style":
                 requested_style = input(
-                    "Pilih gaya (tegas/moody/profesional): "
+                    "Pilih gaya (common/moody/profesional/comedian): "
                 ).strip().lower()
                 if requested_style in STYLE_INSTRUCTIONS:
                     style = requested_style
                     print(f"Gaya aktif: {style}")
                 else:
-                    print("Gaya tidak tersedia.")
+                    style = DEFAULT_STYLE
+                    print(f"Gaya tidak tersedia. Kembali ke gaya {DEFAULT_STYLE}.")
                 continue
 
-            print("[4/5] RAG membuat query vector dan mencari dokumen...")
+            print(colored(INFO_COLOR, "[4/5] RAG membuat query vector dan mencari dokumen..."))
             sources = retrieve(
                 question,
                 embedding_model,
@@ -159,14 +183,17 @@ def main():
                 vectors,
             )
             best_score, rag_context = sources[0]
-            print(f"Similarity: {best_score:.3f}")
-            print(f"Referensi RAG: {rag_context}")
+            print(colored(RAG_COLOR, f"RAG / similarity: {best_score:.3f}"))
 
             if best_score < MIN_SIMILARITY:
-                print("Assistant: Informasi RAG belum cukup untuk menjawab.")
+                print(colored(AI_COLOR, "AI / Informasi RAG belum cukup untuk menjawab."))
                 continue
 
-            print(f"[5/5] RAG masuk context window LLM dengan gaya '{style}'...")
+            print(colored(
+                CONTEXT_COLOR,
+                f"[5/5] RAG masuk context window LLM dengan gaya '{style}':\n"
+                f"{rag_context}",
+            ))
             answer = generate_answer_with_style(
                 question,
                 rag_context,
@@ -174,7 +201,7 @@ def main():
                 tokenizer,
                 model,
             )
-            print(f"Assistant: {answer}")
+            print(colored(AI_COLOR, f"AI / jawaban:\n{answer}"))
     finally:
         client.close()
 

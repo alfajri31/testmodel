@@ -70,15 +70,16 @@ Step 11 tidak memakai dataset RAG lokal. Sumber fakta diambil langsung dari Mong
 Gaya jawaban adalah data yang berbeda dari fakta RAG. Contoh format gaya tersedia di:
 
 ```text
-step11/dataset/response_styles.example.jsonl
+step11/dataset/response.jsonl
 ```
 
 Satu fakta dapat dirangkai dengan gaya berbeda:
 
 ```text
-tegas       → langsung dan singkat
-moody       → reflektif dan lebih panjang
+common      → jawaban dasar dan langsung
+moody       → dramatis, emosional, dan sedikit lebay
 profesional → terstruktur dan formal
+comedian    → humor ringan dengan punchline singkat
 ```
 
 Fakta tetap berasal dari RAG. Gaya hanya mengatur cara base model merangkai fakta tersebut.
@@ -241,6 +242,43 @@ RAG retrieval
 
 Jika chat dihapus, referensi RAG yang sudah masuk context dan KV cache dapat dilepas. Model tidak kehilangan bobot atau pengetahuan permanennya; model hanya kehilangan konteks sementara percakapan tersebut.
 
+## 🟢 Pola model menjawab dan sumber kebenaran
+
+Model mempelajari pola dari variasi data training, misalnya:
+
+```text
+cara membuka jawaban
+panjang pendeknya kalimat
+gaya common, moody, profesional, atau comedian
+cara menyusun daftar dan penjelasan
+```
+
+Pola tersebut membantu model menentukan bagaimana jawaban dirangkai. Namun
+pola training tidak otomatis menjamin fakta yang dijawab selalu benar.
+
+Untuk fakta khusus atau data yang berubah, sumbernya dapat berasal dari RAG:
+
+```text
+Data training
+→ mengajarkan cara memahami dan menyusun jawaban
+
+RAG / database
+→ menyediakan fakta yang digunakan pada percakapan saat ini
+```
+
+Contoh:
+
+```text
+RAG menemukan daftar pemain Inter Miami
+→ fakta masuk ke context window
+→ model menggunakan pola bahasa untuk merangkai jawaban
+```
+
+Jadi RAG memberikan bahan faktual, sedangkan model menentukan cara
+menyampaikannya. Model masih dapat meringkas, melewatkan item, atau salah
+menyalin daftar panjang. Untuk fakta yang harus persis, validasi langsung ke
+database atau tampilkan hasil RAG tanpa membiarkan model mengubahnya.
+
 ## 🟢 Ringkasan
 
 ```text
@@ -274,6 +312,20 @@ Jalankan dari root project:
 ```bash
 python3 step11/train_peft.py
 ```
+
+Script training memakai beberapa sumber:
+
+```text
+dataset/dataset.jsonl
+dataset/response.jsonl
+dataset/response_style_long.example.jsonl
+dataset/multi_value.example.jsonl
+```
+
+`response.jsonl` berisi contoh jawaban dasar. `response_style_long.example.jsonl`
+berisi 200 contoh gaya panjang: masing-masing 50 untuk common, moody,
+profesional, dan comedian.
+`multi_value.example.jsonl` mengajarkan cara mempertahankan daftar banyak item.
 
 Output penting:
 
@@ -310,7 +362,7 @@ Gaya default script adalah `profesional`. Untuk menggantinya saat program berjal
 
 ```text
 /style
-→ pilih: tegas, moody, atau profesional
+→ pilih: common, moody, profesional, atau comedian
 ```
 
 Perintah `/style` hanya mengubah instruksi `system` di context window. Perintah tersebut tidak mengubah bobot model.

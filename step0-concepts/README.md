@@ -1099,6 +1099,21 @@ Contoh kedua juga benar menurut akurasi, tetapi memiliki loss lebih rendah karen
 
 `Validation loss` adalah rata-rata loss pada data validasi, yaitu data yang tidak dipakai untuk memperbarui bobot secara langsung. Nilai ini membantu memeriksa apakah model bekerja baik pada contoh baru, bukan hanya menghafal data training.
 
+Validation loss dihitung setelah `lm_head` menghasilkan skor atau probabilitas kandidat token:
+
+```text
+data validasi
+→ embedding
+→ Transformer layer 1 sampai 28
+→ contextual vector akhir
+→ lm_head
+→ skor/probabilitas token
+→ bandingkan dengan target
+→ validation loss
+```
+
+Jadi perhitungannya memang berada setelah `lm_head`, tetapi yang dievaluasi adalah seluruh jalur model, bukan `lm_head` saja. Pada validation, loss hanya dicatat sebagai metrik; bobot tidak diperbarui.
+
 ```text
 loss training rendah
 → model cocok dengan data latihan

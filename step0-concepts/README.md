@@ -204,6 +204,8 @@ Contoh hitungan di bagian berikut memakai empat dimensi agar mudah dihitung. Ben
 
 ## 🟢 4. `q_proj`: membuat Query dari token terakhir
 
+Bobot yang digunakan di bagian ini adalah `Wq`, yaitu matriks bobot milik `q_proj` pada layer yang sedang diproses. Setiap layer memiliki `Wq` sendiri.
+
 Untuk memprediksi token setelah prompt, Query yang menjadi fokus berasal dari posisi token terakhir `"bisa"`:
 
 ```text
@@ -217,6 +219,8 @@ Secara singkat:
 ```text
 Q_bisa total = hidden_bisa × Wq
 ```
+
+Jadi `Wq` bukan hasil perhitungan saat inference. `Wq` sudah tersimpan di model; inference hanya mengalikan hidden vector saat ini dengan `Wq` untuk menghasilkan Q.
 
 Pada Layer pertama, `hidden_bisa` berawal dari embedding vector token `"bisa"` yang diambil dari embedding table base model. Pada layer berikutnya, `hidden_bisa` adalah hasil pemrosesan layer sebelumnya.
 
@@ -308,6 +312,8 @@ hidden_bisa dari embedding/layer sebelumnya
 
 ## 🟢 5. `k_proj`: membuat Key untuk semua token
 
+Bobot yang digunakan di bagian ini adalah `Wk`, yaitu matriks bobot milik `k_proj` pada layer yang sedang diproses. Setiap layer memiliki `Wk` sendiri.
+
 Setiap token yang dapat dilihat menyediakan Key pada setiap head.
 
 Fokus kegunaan K pada tahap ini:
@@ -317,6 +323,10 @@ Fokus kegunaan K pada tahap ini:
 Untuk konteks `"Saya terkena bisa"`:
 
 ```text
+hidden_Saya    × Wk → K_Saya
+hidden_terkena × Wk → K_terkena
+hidden_bisa    × Wk → K_bisa
+
 Q dari token terakhir "bisa"
 → dibandingkan dengan K_Saya
 → dibandingkan dengan K_terkena
@@ -422,11 +432,21 @@ Head 2 paling memperhatikan `"Saya"`. Dengan demikian, dua head dapat menghasilk
 
 ## 🟢 6. `v_proj`: membuat Value lalu mencampurkan informasi
 
+Bobot yang digunakan di bagian ini adalah `Wv`, yaitu matriks bobot milik `v_proj` pada layer yang sedang diproses. Setiap layer memiliki `Wv` sendiri.
+
 Misalkan `v_proj` menghasilkan Value berikut. Angkanya adalah ilustrasi hasil projection, bukan vector yang dibuat acak saat inference.
 
 Fokus kegunaan V pada tahap ini:
 
 > V membawa informasi berbentuk vector dari setiap token. Persentase relevansi hasil Q–K menentukan seberapa besar setiap V ikut membentuk output attention.
+
+Secara proses, setiap hidden vector token dikalikan dengan `Wv` terlebih dahulu:
+
+```text
+hidden_Saya    × Wv → V_Saya
+hidden_terkena × Wv → V_terkena
+hidden_bisa    × Wv → V_bisa
+```
 
 Head 1:
 
@@ -493,6 +513,8 @@ V tidak dibuat khusus untuk menghasilkan KV cache. KV cache hanya menyimpan hasi
 
 ## 🟢 7. `o_proj`: menggabungkan semua head
 
+Bobot yang digunakan di bagian ini adalah `Wo`, yaitu matriks bobot milik `o_proj` pada layer yang sedang diproses. Setiap layer memiliki `Wo` sendiri.
+
 Output kedua head disambungkan, bukan dijumlahkan:
 
 ```text
@@ -515,7 +537,7 @@ Kemudian `o_proj` mencampurkan hasil semua head dan menghasilkan output attentio
 
 ```text
 gabungan semua head
-→ o_proj
+× Wo
 → output attention = [-0.40, 0.14, 0.24, 0.58]
 ```
 

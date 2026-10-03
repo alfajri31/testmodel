@@ -70,6 +70,14 @@ STYLE_GENERATION = {
     "comedian": {"do_sample": False},
 }
 
+GUIDE_QUESTIONS = [
+    "Sebutkan para pemain Inter Miami CF.",
+    "Sebutkan salah satu pemain Inter Miami CF.",
+    "Bagaimana RAG menemukan data pemain?",
+    "Jelaskan daftar pemain tersebut dengan gaya comedian.",
+    "Apa perbedaan RAG dan model bahasa?",
+]
+
 
 def generate_answer_with_style(question, rag_context, style, tokenizer, model):
     """Buat jawaban dengan fakta RAG dan gaya bahasa yang dipilih."""
@@ -156,6 +164,9 @@ def main():
         print(colored(INFO_COLOR, f"[3/5] RAG siap: {len(descriptions):,} dokumen tersedia."))
 
         style = DEFAULT_STYLE
+        print("\nContoh pertanyaan yang sesuai dengan dataset:")
+        for guide_question in GUIDE_QUESTIONS:
+            print(f"- {guide_question}")
         print("\nKetik pertanyaan. Ketik /style untuk mengganti gaya, /exit untuk keluar.")
         while True:
             question = input("\nUser: ").strip()

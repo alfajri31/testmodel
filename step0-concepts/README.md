@@ -841,6 +841,48 @@ hidden vector saat ini
 
 Yang berubah mengikuti prompt adalah Q, K, V, bobot relevansi attention, dan contextual vector—bukan bobot modelnya.
 
+## 🟢 Training vs Inference
+
+Training dan inference sama-sama melakukan prediksi token, tetapi tujuannya berbeda.
+
+### 🟢 Saat training
+
+Dataset menyediakan input dan target jawaban. Model membuat prediksi, lalu prediksi tersebut dibandingkan dengan target untuk menghitung loss. Hasil loss dipakai untuk memperbarui bobot.
+
+```text
+input training
+→ prediksi token
+→ bandingkan dengan target
+→ hitung loss
+→ perbarui bobot
+```
+
+### 🟢 Saat inference
+
+Inference terjadi ketika model memakai bobot hasil training untuk menjawab input user. Prediksi tetap dilakukan satu token demi satu token, tetapi tidak ada target training, tidak ada perhitungan loss untuk belajar, dan bobot tidak diperbarui.
+
+```text
+input user
+→ prediksi next token
+→ token masuk ke context window
+→ prediksi next token berikutnya
+→ ulangi sampai response selesai
+```
+
+Contoh:
+
+```text
+Input: “Ibu kota Indonesia adalah”
+→ prediksi: “Jakarta”
+```
+
+Ringkasnya:
+
+```text
+Training  → prediksi + loss + pembaruan bobot
+Inference → prediksi saja + bobot tetap
+```
+
 ## 🟢 Kesimpulan
 
 ```text

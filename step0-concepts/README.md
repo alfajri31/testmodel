@@ -794,6 +794,8 @@ Target : "ular"
 
 Jika prediksinya salah, proses training memperbaiki kemampuan model agar target yang benar mendapatkan probabilitas lebih tinggi. Detail parameter yang diperbarui belum dibahas pada pengantar ini.
 
+**Inference** adalah saat model menggunakan bobot hasil training untuk memproses input dan menghasilkan response. Jadi ketika user mengirim pertanyaan, model sedang melakukan inference. Pada tahap ini model tidak belajar dan bobotnya tidak berubah.
+
 ### 🟢 Context window: ingatan kerja sementara
 
 Selama percakapan berlangsung, token baru ditambahkan ke context window. Model lalu menghitung contextual vector baru agar jawaban berikutnya dapat mempertimbangkan percakapan sebelumnya.

@@ -1,334 +1,139 @@
-# 🟢 Step 11 — Hubungan RAG dan Model Saat Menjawab
+# 🟢 Step 11 — RAG, Style Jawaban, dan Inference
 
-Step ini menjelaskan bagaimana data dari RAG dapat dipakai model untuk menjawab pertanyaan, meskipun fakta tersebut tidak diberikan melalui dataset fine-tuning model.
-
-Contoh utama:
-
-```text
-User bertanya:
-“Sebutkan pemain Inter Miami.”
-
-MongoDB/RAG menyediakan fakta pemain.
-LLM membaca fakta tersebut di context window.
-LLM merangkai jawaban secara natural.
-```
-
-RAG bukan pengganti model bahasa. RAG menyediakan referensi; model menyediakan kemampuan memahami instruksi dan menyusun jawaban.
-
-## 🟢 Arsitektur singkat
+Step ini menjelaskan bagaimana RAG menyediakan fakta, lalu model menyusun jawaban
+dengan style tertentu.
 
 ```text
 Pertanyaan user
-        ↓
-Embedding model RAG
-        ↓
-Query vector
-        ↓
-Pencarian similarity di database
-        ↓
-Natural text yang relevan
-        ↓
-System prompt + referensi + pertanyaan user
-        ↓
-LLM inference
-        ↓
-Transformer layer 1 sampai 28
-        ↓
-Contextual vector akhir
-        ↓
-lm_head memilih next token
-        ↓
-Jawaban user
+→ embedding query
+→ pencarian dokumen MongoDB
+→ natural text RAG
+→ context window
+→ model + adapter LoRA
+→ jawaban
 ```
 
-## 🟢 Data di database
+Step 11 tidak melakukan merge. Inference memakai base model dan adapter LoRA.
 
-Dokumen RAG biasanya menyimpan natural text dan embedding-nya:
+## 🟢 Peran komponen
 
-```json
-{
-  "id": "inter-miami-roster",
-  "text": "Pemain Inter Miami yang tercatat antara lain Lionel Messi, Luis Suárez, dan Rodrigo De Paul.",
-  "embedding": [0.021, -0.184, 0.552]
-}
-```
-
-Field tersebut memiliki fungsi berbeda:
+RAG mencari fakta yang relevan dari MongoDB. Base model memahami bahasa dan
+menyusun kalimat. Adapter LoRA mempelajari pola tambahan seperti gaya jawaban.
+Context window membawa referensi RAG ke model hanya selama inference.
 
 ```text
-text
-→ fakta yang nanti dibaca oleh LLM
-
-embedding
-→ angka untuk mencari dokumen yang mirip dengan pertanyaan
+RAG/database → fakta aktual
+Base model   → kemampuan bahasa
+Adapter      → pola tambahan dan style
 ```
 
-Embedding RAG bukan embedding input LLM, bukan contextual vector, dan bukan output `lm_head`. Embedding RAG dipakai lebih dulu pada tahap pencarian dokumen.
+## 🟢 Alur inference
 
-Step 11 tidak memakai dataset RAG lokal. Sumber fakta diambil langsung dari MongoDB yang dikonfigurasi pada helper Step 9. Field `text` atau `description` dan `embedding` harus sudah tersedia di collection tersebut.
+1. Pertanyaan user diubah menjadi query vector.
+2. Query dibandingkan dengan embedding dokumen MongoDB.
+3. Dokumen dengan similarity tertinggi dipilih.
+4. Natural text dimasukkan ke system prompt dan context window.
+5. Model memproses prompt melalui layer Transformer.
+6. `lm_head` memilih token jawaban satu per satu.
+7. Jawaban ditampilkan dengan style aktif.
 
-Gaya jawaban adalah data yang berbeda dari fakta RAG. Contoh format gaya tersedia di:
+RAG menyediakan referensi, tetapi model masih dapat meringkas atau salah
+menyalin daftar panjang.
+
+## 🟢 Warna output
 
 ```text
-step11/dataset/response.jsonl
+Cyan    → similarity dan retrieval RAG
+Kuning  → isi yang masuk context window
+Hijau   → jawaban AI
+Abu-abu → status proses
 ```
 
-Satu fakta dapat dirangkai dengan gaya berbeda:
+## 🟢 Style jawaban
 
 ```text
-common      → jawaban dasar dan langsung
-moody       → dramatis, emosional, dan sedikit lebay
-profesional → terstruktur dan formal
-comedian    → humor ringan dengan punchline singkat
+common       → jawaban dasar
+moody        → dramatis dan reflektif
+profesional  → formal dan terstruktur
+comedian     → kocak dengan punchline
 ```
 
-Fakta tetap berasal dari RAG. Gaya hanya mengatur cara base model merangkai fakta tersebut.
-
-## 🟢 Tahap 1 — RAG mencari referensi
-
-User bertanya:
+Style default adalah `profesional`. Ganti saat program berjalan:
 
 ```text
-Sebutkan pemain Inter Miami.
+/style
+Pilih gaya (common/moody/profesional/comedian): comedian
 ```
 
-Embedding model RAG mengubah pertanyaan menjadi query vector:
+Semua style menggunakan `do_sample=False` supaya output lebih konsisten.
+
+## 🟢 Dataset
 
 ```text
-pertanyaan user
-→ query vector
+dataset/dataset.jsonl
+→ contoh training dasar
+
+dataset/response.jsonl
+→ percakapan dasar sepak bola tanpa field style
+
+dataset/response_style_long.example.jsonl
+→ 200 contoh percakapan umum:
+   common: 50
+   moody: 50
+   profesional: 50
+   comedian: 50
+
+dataset/multi_value.example.jsonl
+→ contoh mempertahankan banyak item dalam satu jawaban
 ```
 
-Query vector dibandingkan dengan embedding dokumen di database:
+Dataset style sengaja tidak memakai nama klub atau pemain. Dataset tersebut hanya
+mengajarkan cara berbicara.
 
-```text
-query vector · embedding dokumen
-→ similarity score
-```
+## 🟢 Overfitting
 
-Dokumen dengan similarity paling tinggi dipilih:
+Overfitting terjadi ketika model menghafal contoh training, bukan memahami pola
+umumnya.
 
-```text
-Pemain Inter Miami yang tercatat antara lain
-Lionel Messi, Luis Suárez, dan Rodrigo De Paul.
-```
-
-Pada tahap ini belum ada jawaban dari LLM. RAG baru memilih sumber informasi.
-
-## 🟢 Tahap 2 — Referensi dimasukkan ke context model
-
-Aplikasi membuat prompt untuk model:
-
-```text
-System:
-Gunakan referensi berikut sebagai sumber fakta utama.
-Jika referensi tidak cukup, katakan informasi tidak ditemukan.
-
-Referensi RAG:
-Pemain Inter Miami yang tercatat antara lain Lionel Messi,
-Luis Suárez, dan Rodrigo De Paul.
-
-User:
-Sebutkan pemain Inter Miami.
-
-Assistant:
-```
-
-Secara teknis, pesan tersebut diubah oleh chat template menjadi token. Token dari system, referensi RAG, dan user semuanya masuk ke context window.
-
-```text
-system + referensi RAG + user
-→ token context window
-```
-
-Model tidak menerima embedding RAG sebagai pengganti token. Model menerima natural text hasil retrieval, lalu membuat embedding/contextual vector-nya sendiri melalui embedding table dan Transformer.
-
-## 🟢 Tahap 3 — Model melakukan inference
-
-Setelah referensi berada di context window, model menjalankan inference:
-
-```text
-token context window
-→ embedding awal
-→ Transformer layer 1
-→ Transformer layer 2
-→ ...
-→ Transformer layer 28
-→ contextual vector akhir
-→ lm_head
-```
-
-`lm_head` memberi skor pada seluruh kandidat token. Misalnya, pada langkah tertentu:
-
-```text
-“Lionel”  → probabilitas tinggi
-“Pemain”  → probabilitas tinggi
-“Jakarta” → probabilitas rendah
-```
-
-Model memilih satu token, memasukkannya kembali ke context window, lalu memprediksi token berikutnya:
-
-```text
-“Pemain”
-→ “Inter”
-→ “Miami”
-→ “yang”
-→ “tercatat”
-→ ...
-```
-
-Jawaban natural dapat menjadi:
-
-```text
-Pemain Inter Miami yang tercatat antara lain Lionel Messi,
-Luis Suárez, dan Rodrigo De Paul.
-```
-
-Kalimat tersebut tidak harus tersimpan persis di database. Database memberi fakta; base model menyusun kalimat token demi token.
-
-## 🟢 Dua perhitungan yang berbeda
-
-RAG dan LLM sama-sama menggunakan vector, tetapi pekerjaannya berbeda:
-
-```text
-RAG retrieval
-→ query embedding dibandingkan dengan document embedding
-→ memilih natural text yang relevan
-
-LLM inference
-→ natural text masuk context window
-→ attention membentuk contextual vector
-→ lm_head memilih next token
-```
-
-Jangan menyamakan similarity RAG dengan probabilitas token LLM:
-
-```text
-similarity RAG
-→ seberapa mirip pertanyaan dengan dokumen
-
-probabilitas lm_head
-→ seberapa mungkin kandidat token menjadi token berikutnya
-```
-
-## 🟢 Peran base model dan RAG
-
-```text
-Base model
-→ tata bahasa
-→ kemampuan mengikuti instruksi
-→ pola percakapan
-→ kemampuan merangkai jawaban
-
-RAG/database/API
-→ fakta khusus aplikasi
-→ data terbaru
-→ data yang tidak perlu dimasukkan ke bobot model
-```
-
-Jika RAG mengembalikan daftar pemain, model dapat mengubahnya menjadi kalimat yang lebih natural. Jika RAG tidak menemukan fakta yang cukup, system prompt harus meminta model untuk tidak mengarang.
-
-## 🟢 RAG tidak mengubah bobot model
-
-Saat user bertanya, RAG hanya mengambil data dan memasukkannya ke context window. Bobot model tidak diperbarui:
-
-```text
-RAG retrieval
-→ context sementara
-→ inference
-→ response
-→ bobot tetap
-```
-
-Jika chat dihapus, referensi RAG yang sudah masuk context dan KV cache dapat dilepas. Model tidak kehilangan bobot atau pengetahuan permanennya; model hanya kehilangan konteks sementara percakapan tersebut.
-
-## 🟢 Pola model menjawab dan sumber kebenaran
-
-Model mempelajari pola dari variasi data training, misalnya:
-
-```text
-cara membuka jawaban
-panjang pendeknya kalimat
-gaya common, moody, profesional, atau comedian
-cara menyusun daftar dan penjelasan
-```
-
-Pola tersebut membantu model menentukan bagaimana jawaban dirangkai. Namun
-pola training tidak otomatis menjamin fakta yang dijawab selalu benar.
-
-Untuk fakta khusus atau data yang berubah, sumbernya dapat berasal dari RAG:
-
-```text
-Data training
-→ mengajarkan cara memahami dan menyusun jawaban
-
-RAG / database
-→ menyediakan fakta yang digunakan pada percakapan saat ini
-```
-
-Contoh:
-
-```text
-RAG menemukan daftar pemain Inter Miami
-→ fakta masuk ke context window
-→ model menggunakan pola bahasa untuk merangkai jawaban
-```
-
-Jadi RAG memberikan bahan faktual, sedangkan model menentukan cara
-menyampaikannya. Model masih dapat meringkas, melewatkan item, atau salah
-menyalin daftar panjang. Untuk fakta yang harus persis, validasi langsung ke
-database atau tampilkan hasil RAG tanpa membiarkan model mengubahnya.
-
-## 🟢 Overfitting pada dataset jawaban
-
-Overfitting terjadi ketika model terlalu menghafal contoh training, bukan
-mempelajari pola umumnya.
-
-Contoh dataset yang terlalu sempit:
+Jika dataset berulang kali berisi:
 
 ```text
 User: Sebutkan pemain Inter Miami.
-Model: Lionel Messi dan Luis Suárez.
+Jawaban: Lionel Messi dan Luis Suárez.
 ```
 
-Jika hanya pola itu yang dilatih, model dapat mengulang dua nama tersebut
-ketika user bertanya dengan cara berbeda, meskipun RAG memberikan daftar yang
-lebih panjang.
+model dapat mengulang dua nama itu ketika pertanyaan berubah, walaupun RAG
+memberikan daftar yang lebih panjang.
 
-Untuk menguranginya, gunakan beberapa parafrase dan variasi konteks:
+Karena itu, nama Inter Miami dan pemainnya tidak boleh mendominasi dataset style.
+Fakta tersebut lebih tepat disimpan di RAG atau dataset fakta, sedangkan dataset
+style memakai percakapan umum.
+
+Cara mengurangi overfitting:
 
 ```text
-Sebutkan pemain Inter Miami.
-Siapa saja pemain Inter Miami?
-Tampilkan daftar pemain yang tersedia.
-Pemain apa yang tercatat di referensi?
+1. Gunakan banyak parafrase pertanyaan.
+2. Variasikan panjang dan konteks jawaban.
+3. Pisahkan dataset style dari dataset fakta.
+4. Uji dengan pertanyaan yang tidak sama persis dengan training.
 ```
 
-Pertanyaan evaluasi sebaiknya tidak sama persis dengan pertanyaan training.
-Dengan begitu kita dapat memeriksa apakah model memahami pola jawaban atau
-hanya menghafal pasangan pertanyaan dan jawaban tertentu.
-
-## 🟢 Ringkasan
+## 🟢 Struktur folder
 
 ```text
-1. User mengirim pertanyaan.
-2. Embedding model mengubah pertanyaan menjadi query vector.
-3. RAG mencari dokumen paling relevan di database.
-4. Natural text hasil RAG dimasukkan ke context window.
-5. LLM memproses context melalui 28 Transformer layer.
-6. lm_head memilih token jawaban satu per satu.
-7. Jawaban dikirim ke user.
+step11/
+├── dataset/
+│   ├── dataset.jsonl
+│   ├── response.jsonl
+│   ├── response_style_long.example.jsonl
+│   └── multi_value.example.jsonl
+├── train_peft.py
+├── test_rag_model_flow.py
+├── requirements.txt
+└── README.md
 ```
 
-Kesimpulan utamanya:
-
-> RAG memberikan fakta yang harus dibaca model, sedangkan base model menentukan bagaimana fakta tersebut dipahami dan dirangkai menjadi jawaban.
-
-## 🟢 Menjalankan script
-
-Step 11 dapat memakai adapter hasil training Step 11 untuk demo RAG. Jika belum ada, script memakai adapter Step 8 sebagai fallback. Step ini tidak melakukan merge.
-
-### Tahap 1 — Training adapter Step 11
+## 🟢 Menjalankan
 
 Pastikan base model tersedia:
 
@@ -336,64 +141,41 @@ Pastikan base model tersedia:
 ls /Users/fajri/Projects/mytestmodel/config.json
 ```
 
-Jalankan dari root project:
-
-```bash
-python3 step11/train_peft.py
-```
-
-Script training memakai beberapa sumber:
-
-```text
-dataset/dataset.jsonl
-dataset/response.jsonl
-dataset/response_style_long.example.jsonl
-dataset/multi_value.example.jsonl
-```
-
-`response.jsonl` berisi contoh jawaban dasar. `response_style_long.example.jsonl`
-berisi 200 contoh gaya panjang: masing-masing 50 untuk common, moody,
-profesional, dan comedian.
-`multi_value.example.jsonl` mengajarkan cara mempertahankan daftar banyak item.
-
-Output penting:
-
-```text
-step11/output/
-└── adapter_config.json
-```
-
-### Tahap 2 — Menjalankan RAG dan model
-
-Install dependency:
+Install dependency dan latih adapter:
 
 ```bash
 python3 -m pip install -r step11/requirements.txt
+python3 step11/train_peft.py
 ```
 
-Jalankan dari root project:
+Jalankan RAG dan model:
 
 ```bash
 python3 step11/test_rag_model_flow.py
 ```
 
-Script menampilkan tahapnya secara berurutan:
+Perintah interaktif:
 
 ```text
-[1/5] memuat embedding model RAG
-[2/5] memuat model jawaban
-[3/5] membaca dokumen MongoDB
-[4/5] mencari referensi dengan similarity
-[5/5] memasukkan natural text ke context window dan membuat jawaban
+/style → mengganti style
+/exit  → keluar
 ```
 
-Gaya default script adalah `profesional`. Untuk menggantinya saat program berjalan:
+Contoh pertanyaan:
 
 ```text
-/style
-→ pilih: common, moody, profesional, atau comedian
+Sebutkan para pemain Inter Miami CF.
+Sebutkan salah satu pemain Inter Miami CF.
+Bagaimana RAG menemukan data pemain?
+Apa perbedaan RAG dan model bahasa?
 ```
 
-Perintah `/style` hanya mengubah instruksi `system` di context window. Perintah tersebut tidak mengubah bobot model.
+## 🟢 Kesimpulan
 
-Script Step 11 menggunakan helper dan koneksi database yang sama dengan Step 9. MongoDB hanya dibaca; script tidak menambahkan atau mengubah dokumen.
+```text
+Training → mengajarkan pola dan style
+RAG      → menyediakan fakta aktual
+Context  → membawa fakta ke model
+Inference→ merangkai jawaban
+```
+

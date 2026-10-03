@@ -58,11 +58,17 @@ Merekam struktur model sebagai teks dan graph di TensorBoard, lalu menguji adapt
 
 [Baca Step 7](step7/README.md)
 
-### Step 8 — Dimensi Vector, Contextual Vector, dan Prediksi Token
+### Step 8 — Continue Training Setelah Merge
 
-Memahami dimensi sebagai ruang representasi, perubahan vector pada setiap Transformer layer, serta cara `lm_head` menghitung kandidat token berikutnya.
+Melatih adapter LoRA baru dari model hasil merge Step 5, lalu menggabungkannya kembali agar training tambahan tidak dimulai dari base model awal.
 
 [Baca Step 8](step8/README.md)
+
+### Step 9 — RAG dari MongoDB
+
+Mencari natural text pemain sepak bola yang relevan dari MongoDB memakai embedding, lalu memberi hasilnya ke model sebagai konteks jawaban.
+
+[Baca Step 9](step9/README.md)
 
 ## Alur Singkat
 
@@ -83,7 +89,9 @@ Deploy ke Ollama
     ↓
 Visualisasi Struktur dan Uji Inference
     ↓
-Memahami Alur Vector hingga Prediksi Token
+Continue Training dari Merged Model
+    ↓
+RAG dari MongoDB
 ```
 
 ## Ringkasan
@@ -94,6 +102,7 @@ Merge       → menggabungkan LoRA dengan base model
 Uji model   → menjalankan inference dan melihat struktur model
 Konversi    → mengubah format model untuk runtime
 Deploy      → menjalankan model melalui Ollama
-Dimensi     → menyediakan ruang untuk merepresentasikan banyak pola konteks
-lm_head     → mengubah contextual vector akhir menjadi skor seluruh vocabulary
+Continue    → melatih LoRA baru dari bobot merged model sebelumnya
+Merge lanjut → menggabungkan adapter training tambahan ke model tahap sebelumnya
+RAG         → mengambil fakta MongoDB saat inference tanpa melatih ulang model
 ```

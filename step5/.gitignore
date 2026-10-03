@@ -1,0 +1,10 @@
+# Generated training, model, cache, and local runtime files
+output/
+merged_model/
+checkpoints/
+runs/
+logs/
+__pycache__/
+*.pyc
+.DS_Store
+

@@ -1,4 +1,4 @@
-# <span style="color: #2563EB;">Fondasi LLM — Dari Token sampai Prediksi Token Berikutnya</span>
+# [Fondasi LLM — Dari Token sampai Prediksi Token Berikutnya](#)
 
 Step ini menjelaskan satu pertanyaan utama:
 
@@ -10,7 +10,7 @@ Semua angka hanya ilustrasi agar perhitungannya mudah dilihat, bukan nilai asli 
 
 Nilai bobot seperti `Wq`, `Wk`, `Wv`, `Wo`, `W_up`, dan `W_down` belum dijelaskan di awal agar alurnya tetap sederhana. Asal nilai bobot tersebut dibahas pada Section 6, setelah alur prediksi token selesai.
 
-## <span style="color: #2563EB;">Gambaran Besar</span>
+## [Gambaran Besar](#)
 
 ```text
 Kalimat
@@ -30,7 +30,7 @@ Token berikutnya dipilih
 Token ditambahkan ke context window dan proses diulang
 ```
 
-## <span style="color: #2563EB;">1. Token Menjadi Embedding</span>
+## [1. Token Menjadi Embedding](#)
 
 Anggap tokenizer mempunyai pemetaan berikut:
 
@@ -73,7 +73,7 @@ token ID "Saya"
 
 Model nyata biasanya menggunakan ratusan atau ribuan dimensi. Contoh dua dimensi pada pengantar ini hanya menyederhanakan cara kerja.
 
-### <span style="color: #2563EB;">Hidden size: panjang vector utama setiap token</span>
+### [Hidden size: panjang vector utama setiap token](#)
 
 `Hidden size` adalah jumlah angka dalam vector utama yang dibawa setiap token saat melewati model. Pada Qwen3-0.6B di project ini, hidden size adalah `1.024`.
 
@@ -111,7 +111,7 @@ Token `"bisa"` memiliki embedding awal yang sama pada kedua kalimat:
 
 Vector mempunyai lebih dari satu dimensi agar model memiliki ruang untuk mempelajari banyak pola. Namun satu dimensi tidak memiliki arti tetap seperti `kemampuan` atau `racun`. Makna muncul dari kombinasi seluruh vector dan hubungannya dengan vector lain.
 
-## <span style="color: #2563EB;">2. Attention Membaca Konteks</span>
+## [2. Attention Membaca Konteks](#)
 
 Embedding awal token `"bisa"` tetap sama, tetapi context window yang berbeda akan menghasilkan contextual vector yang berbeda.
 
@@ -158,7 +158,7 @@ Karena konteksnya berbeda, hasilnya juga dapat berbeda:
 
 Section 2 hanya memberikan gambaran besar. Perhitungan Q, K, V, setiap head, dan O dijelaskan secara berurutan pada Section 3.
 
-## <span style="color: #2563EB;">3. Proses `q_proj`, `k_proj`, `v_proj`, dan `o_proj`</span>
+## [3. Proses `q_proj`, `k_proj`, `v_proj`, dan `o_proj`](#)
 
 Setiap projection menggunakan parameter yang sudah tersimpan di base model. Pada bagian Q, kita hanya memperlihatkan `Wq` untuk menjelaskan dari mana Q total berasal. Detail parameter projection lainnya dapat dipelajari setelah alur dasarnya dipahami.
 
@@ -172,7 +172,7 @@ Dimensi setiap head = 2
 Total dimensi       = 4
 ```
 
-### <span style="color: #2563EB;">3.1 `q_proj`: membuat Query dari token terakhir</span>
+### [3.1 `q_proj`: membuat Query dari token terakhir](#)
 
 Untuk memprediksi token setelah prompt, Query yang menjadi fokus berasal dari posisi token terakhir `"bisa"`:
 
@@ -276,7 +276,7 @@ hidden_bisa dari embedding/layer sebelumnya
 → Head 2 [0.0, 1.0]
 ```
 
-### <span style="color: #2563EB;">3.2 `k_proj`: membuat Key untuk semua token</span>
+### [3.2 `k_proj`: membuat Key untuk semua token](#)
 
 Setiap token yang dapat dilihat menyediakan Key pada setiap head.
 
@@ -324,7 +324,7 @@ Bukan:
 Q_bisa Head 1 · K token Head 2 ❌
 ```
 
-### <span style="color: #2563EB;">3.3 Menghitung relevansi Head 1</span>
+### [3.3 Menghitung relevansi Head 1](#)
 
 ```text
 Q_bisa Head 1 = [1.0, 0.0]
@@ -357,7 +357,7 @@ bisa    → 14%
 
 Head 1 paling memperhatikan `"terkena"`.
 
-### <span style="color: #2563EB;">3.4 Menghitung relevansi Head 2</span>
+### [3.4 Menghitung relevansi Head 2](#)
 
 ```text
 Q_bisa Head 2 = [0.0, 1.0]
@@ -390,7 +390,7 @@ bisa    → sekitar 30.7%
 
 Head 2 paling memperhatikan `"Saya"`. Dengan demikian, dua head dapat menghasilkan pola relevansi berbeda untuk context window yang sama.
 
-### <span style="color: #2563EB;">3.5 `v_proj`: membuat Value lalu mencampurkan informasi</span>
+### [3.5 `v_proj`: membuat Value lalu mencampurkan informasi](#)
 
 Misalkan `v_proj` menghasilkan Value berikut. Angkanya adalah ilustrasi hasil projection, bukan vector yang dibuat acak saat inference.
 
@@ -461,7 +461,7 @@ v_proj menghasilkan V
 
 V tidak dibuat khusus untuk menghasilkan KV cache. KV cache hanya menyimpan hasil K dan V yang sudah dibuat.
 
-### <span style="color: #2563EB;">3.6 `o_proj`: menggabungkan semua head</span>
+### [3.6 `o_proj`: menggabungkan semua head](#)
 
 Output kedua head disambungkan, bukan dijumlahkan:
 
@@ -609,7 +609,7 @@ hidden setelah attention + output_MLP → contextual vector baru untuk layer ber
 output layer terakhir → contextual vector akhir `h` → lm_head
 ```
 
-## <span style="color: #2563EB;">4. `lm_head` Memprediksi Token Berikutnya</span>
+## [4. `lm_head` Memprediksi Token Berikutnya](#)
 
 Contextual vector akhir belum berupa kata. `lm_head` membandingkan `h` dengan vector output seluruh token dalam vocabulary.
 
@@ -679,7 +679,7 @@ probabilitas setiap token
 satu token berikutnya
 ```
 
-## <span style="color: #2563EB;">5. Bagaimana Satu Token Menjadi Rangkaian Kalimat?</span>
+## [5. Bagaimana Satu Token Menjadi Rangkaian Kalimat?](#)
 
 `lm_head` hanya memilih **satu token berikutnya**, bukan langsung membuat satu kalimat lengkap.
 
@@ -742,7 +742,7 @@ pola kata yang sering cocok berdampingan
 
 Model tidak harus menemukan satu kalimat utuh yang sama persis di data latih. Ia dapat menyusun kalimat baru dari banyak pola kecil yang dipelajari.
 
-### <span style="color: #2563EB;">Greedy decoding dan sampling</span>
+### [Greedy decoding dan sampling](#)
 
 Setelah `lm_head`, model mempunyai probabilitas beberapa kandidat token:
 
@@ -778,7 +778,7 @@ probabilitas rendah
 
 Pengaturan seperti `temperature`, `top-k`, dan `top-p` menentukan seberapa bervariasi pilihan tersebut. Untuk keluaran ketat seperti klasifikasi, JSON, atau format operasional, greedy decoding atau temperature sangat rendah biasanya lebih sesuai.
 
-## <span style="color: #2563EB;">6. Mengapa Model Bisa Melakukan Ini?</span>
+## [6. Mengapa Model Bisa Melakukan Ini?](#)
 
 Saat training, model melihat banyak pola bahasa dan mencoba memprediksi token berikutnya:
 
@@ -794,7 +794,7 @@ Target : "ular"
 
 Jika prediksinya salah, proses training memperbaiki kemampuan model agar target yang benar mendapatkan probabilitas lebih tinggi. Detail parameter yang diperbarui belum dibahas pada pengantar ini.
 
-### <span style="color: #2563EB;">Context window: ingatan kerja sementara</span>
+### [Context window: ingatan kerja sementara](#)
 
 Selama percakapan berlangsung, token baru ditambahkan ke context window. Model lalu menghitung contextual vector baru agar jawaban berikutnya dapat mempertimbangkan percakapan sebelumnya.
 
@@ -818,7 +818,7 @@ context window lama dihapus
 
 Base model tetap sama. Yang dibersihkan adalah konteks percakapan sementara, bukan bobot atau pengetahuan permanen model.
 
-### <span style="color: #2563EB;">Dari mana nilai bobot berasal?</span>
+### [Dari mana nilai bobot berasal?](#)
 
 Saat model baru dibuat, matrix bobot—termasuk `Wq`, `Wk`, `Wv`, `Wo`, `W_up`, dan `W_down`—sudah dibuat dan diisi angka acak kecil. Pada tahap training awal (*pretraining*), model membuat prediksi, membandingkannya dengan token target, lalu memperbarui angka-angka bobot tersebut sedikit demi sedikit agar prediksi berikutnya lebih baik.
 
@@ -839,7 +839,7 @@ hidden vector saat ini
 
 Yang berubah mengikuti prompt adalah Q, K, V, bobot relevansi attention, dan contextual vector—bukan bobot modelnya.
 
-## <span style="color: #2563EB;">Kesimpulan</span>
+## [Kesimpulan](#)
 
 ```text
 Token "bisa" sama

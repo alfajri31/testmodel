@@ -1,4 +1,4 @@
-# <span style="color: #2563EB;">Step 6 — Deploy Model ke Ollama</span>
+# [Step 6 — Deploy Model ke Ollama](#)
 
 Pada step ini, merged model dari Step 5 dijalankan di Ollama melalui dua jalur:
 
@@ -16,7 +16,7 @@ Model sumber:
 /Users/fajri/Projects/testmodel/step5/merged_model
 ```
 
-## <span style="color: #2563EB;">Dua versi model</span>
+## [Dua versi model](#)
 
 ```text
 alfajri-qwen3
@@ -28,7 +28,7 @@ alfajri-qwen3-gguf-f32
 
 Keduanya berasal dari merged model yang sama dan belum menggunakan quantization Q4/Q8.
 
-## <span style="color: #2563EB;">Struktur Step 6</span>
+## [Struktur Step 6](#)
 
 ```text
 step6/
@@ -51,7 +51,7 @@ Penjelasan setup Python 3.9, Python 3.11, `pip`, dan virtual environment berada 
 /Users/fajri/Projects/testmodel/step0/README.md
 ```
 
-## <span style="color: #2563EB;">Persiapan Ollama</span>
+## [Persiapan Ollama](#)
 
 Cek Ollama:
 
@@ -75,7 +75,7 @@ Jika aplikasi Ollama sudah berjalan, `ollama serve` tidak perlu dijalankan lagi.
 
 ---
 
-## <span style="color: #2563EB;">Jalur 1 — Safetensors langsung ke Ollama</span>
+## [Jalur 1 — Safetensors langsung ke Ollama](#)
 
 Alur:
 
@@ -135,7 +135,7 @@ salah satu teman Alfajri programmer java.
 
 ---
 
-## <span style="color: #2563EB;">Jalur 2 — Safetensors menjadi GGUF</span>
+## [Jalur 2 — Safetensors menjadi GGUF](#)
 
 Alur:
 
@@ -147,7 +147,7 @@ qwen3-alfajri-f32.gguf
 Ollama: alfajri-qwen3-gguf-f32
 ```
 
-### <span style="color: #2563EB;">Apa itu llama.cpp?</span>
+### [Apa itu llama.cpp?](#)
 
 `llama.cpp` adalah runtime untuk menjalankan LLM secara lokal dengan dukungan CPU, Apple Metal, dan berbagai environment.
 
@@ -159,7 +159,7 @@ convert_hf_to_gguf.py
 
 Python menjalankan converter tersebut, sedangkan source code converter tetap berasal dari repository `llama.cpp`.
 
-### <span style="color: #2563EB;">Cara kerja converter secara sederhana</span>
+### [Cara kerja converter secara sederhana](#)
 
 convert_hf_to_gguf.py adalah **alat converter**.
 
@@ -179,7 +179,7 @@ git clone https://github.com/ggml-org/llama.cpp.git
 
 Walaupun namanya `llama.cpp`, proses konversinya dijalankan dengan Python. Bagian C/C++ terutama digunakan untuk menjalankan model GGUF.
 
-### <span style="color: #2563EB;">Setup llama.cpp</span>
+### [Setup llama.cpp](#)
 
 Repository yang digunakan berada di:
 
@@ -222,7 +222,7 @@ Instal dependency converter:
 
 > Pastikan nilai `VENV_PYTHON` dalam script converter mengarah ke `.venv-llama-cpp-311/bin/python`. Environment `.venv-llama-cpp` lama dibuat dengan Python 3.9.6.
 
-### <span style="color: #2563EB;">Konversi ke GGUF F32</span>
+### [Konversi ke GGUF F32](#)
 
 Script konversi:
 
@@ -261,7 +261,7 @@ sekitar 2,2 GB
 
 `F32` mempertahankan bobot dalam presisi 32-bit. Pada step ini belum dilakukan quantization Q4/Q8.
 
-### <span style="color: #2563EB;">Deploy GGUF ke Ollama</span>
+### [Deploy GGUF ke Ollama](#)
 
 Jalankan:
 
@@ -291,7 +291,7 @@ salah satu teman Alfajri programmer java.
 
 ---
 
-## <span style="color: #2563EB;">Perbedaan `<think>` pada kedua versi</span>
+## [Perbedaan `<think>` pada kedua versi](#)
 
 `<think>` bukan tag HTML. Itu adalah special token atau pola keluaran Qwen3 untuk memisahkan proses thinking dan jawaban akhir.
 
@@ -349,7 +349,7 @@ Hal tersebut bukan aturan untuk semua model GGUF. Model GGUF lain dapat memakai 
 
 ---
 
-## <span style="color: #2563EB;">Mengecek model</span>
+## [Mengecek model](#)
 
 Daftar model:
 
@@ -382,7 +382,7 @@ Lihat model yang sedang dimuat ke memori:
 ollama ps
 ```
 
-## <span style="color: #2563EB;">Benchmark sederhana</span>
+## [Benchmark sederhana](#)
 
 Safetensors:
 
@@ -411,7 +411,7 @@ total duration    → total waktu request
 
 Gunakan prompt, `num_ctx`, dan parameter generation yang sama agar perbandingannya adil.
 
-## <span style="color: #2563EB;">Isi Modelfile</span>
+## [Isi Modelfile](#)
 
 Pengaturan deployment model ke Ollama disimpan di dalam `Modelfile`.
 
@@ -458,7 +458,7 @@ SYSTEM      → instruksi dasar untuk model
 
 `num_ctx 4096` bukan batas RAM. Nilai tersebut adalah jumlah maksimum token context yang disediakan untuk percakapan. Context yang lebih besar biasanya membutuhkan memori lebih banyak.
 
-## <span style="color: #2563EB;">Kesimpulan Step 6</span>
+## [Kesimpulan Step 6](#)
 
 Pada Step 6, merged model dari Step 5 berhasil dimasukkan ke Ollama dengan dua cara:
 
@@ -474,7 +474,7 @@ Versi GGUF F32 dapat dijalankan oleh Ollama melalui format yang sesuai dengan `l
 
 Kedua versi berasal dari bobot fine-tuning yang sama dan belum menggunakan quantization Q4/Q8.
 
-## <span style="color: #2563EB;">Kesimpulan Keseluruhan Konversi</span>
+## [Kesimpulan Keseluruhan Konversi](#)
 
 Tujuan konversi adalah mengubah **format penyimpanan dan runtime model**:
 

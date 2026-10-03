@@ -14,7 +14,7 @@ MongoDB RAG memberi fakta
 
 ```text
 Model jawaban
-→ base model + adapter `/Users/fajri/Projects/testmodel/step8/output`
+→ base model + adapter `/Users/fajri/Projects/testmodel/step9/output`
 
 Database RAG
 → gosoccer_vector
@@ -157,9 +157,15 @@ Perintah interaktif:
 /exit → menutup program
 ```
 
-## 🟢 Training dan inference
+## 🟢 Training adapter dan inference
 
-Step 9 berfokus pada inference RAG. Tidak ada proses merge; model dimuat sebagai base model dengan adapter Step 8.
+Latih adapter Step 9 jika ingin memberi model contoh cara menjawab tentang RAG:
+
+```bash
+python3 step9/train_peft.py
+```
+
+Jika adapter Step 9 belum tersedia, script inference memakai adapter Step 8 sebagai fallback. Tidak ada proses merge.
 
 ## 🟢 Jika similarity terlalu rendah
 

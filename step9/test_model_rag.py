@@ -19,7 +19,13 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 STEP_DIR = Path(__file__).resolve().parent
 BASE_MODEL_PATH = Path("/Users/fajri/Projects/mytestmodel")
-ADAPTER_PATH = STEP_DIR.parent / "step8" / "output"
+STEP9_ADAPTER_PATH = STEP_DIR / "output"
+FALLBACK_ADAPTER_PATH = STEP_DIR.parent / "step8" / "output"
+ADAPTER_PATH = (
+    STEP9_ADAPTER_PATH
+    if (STEP9_ADAPTER_PATH / "adapter_config.json").is_file()
+    else FALLBACK_ADAPTER_PATH
+)
 
 # Database yang sama dengan footballmodel/step.
 MONGODB_URI = (
@@ -122,8 +128,8 @@ def main():
         )
     if not (ADAPTER_PATH / "adapter_config.json").is_file():
         raise FileNotFoundError(
-            f"Adapter Step 8 tidak ditemukan di: {ADAPTER_PATH}\n"
-            "Jalankan step8/train_peft.py terlebih dahulu."
+            f"Adapter tidak ditemukan di: {ADAPTER_PATH}\n"
+            "Jalankan step9/train_peft.py atau step8/train_peft.py terlebih dahulu."
         )
 
     print(f"Memuat embedding model RAG: {EMBEDDING_MODEL_NAME}")

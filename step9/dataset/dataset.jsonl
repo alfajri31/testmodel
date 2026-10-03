@@ -1,0 +1,2 @@
+{"messages":[{"role":"user","content":"Apa fungsi RAG?"},{"role":"assistant","content":"RAG mengambil referensi relevan dari database agar model dapat menjawab berdasarkan data tersebut."}]}
+{"messages":[{"role":"user","content":"Dari mana fakta pemain sepak bola pada Step 9 diperoleh?"},{"role":"assistant","content":"Fakta pemain diperoleh dari natural text yang diambil dari MongoDB melalui proses RAG."}]}

@@ -259,9 +259,9 @@ Kesimpulan utamanya:
 
 ## 🟢 Menjalankan script
 
-Step 11 dapat memakai adapter hasil training Step 8 untuk demo RAG. Step ini tidak melakukan merge.
+Step 11 dapat memakai adapter hasil training Step 11 untuk demo RAG. Jika belum ada, script memakai adapter Step 8 sebagai fallback. Step ini tidak melakukan merge.
 
-### Tahap 1 — Training adapter Step 8
+### Tahap 1 — Training adapter Step 11
 
 Pastikan base model tersedia:
 
@@ -272,13 +272,13 @@ ls /Users/fajri/Projects/mytestmodel/config.json
 Jalankan dari root project:
 
 ```bash
-python3 step8/train_peft.py
+python3 step11/train_peft.py
 ```
 
 Output penting:
 
 ```text
-step8/output/
+step11/output/
 └── adapter_config.json
 ```
 

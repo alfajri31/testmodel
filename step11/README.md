@@ -95,15 +95,24 @@ mengajarkan cara berbicara.
 Overfitting terjadi ketika model menghafal contoh training, bukan memahami pola
 umumnya.
 
-Jika dataset berulang kali berisi:
+Contoh dataset JSONL yang terlalu berulang:
 
-```text
-User: Sebutkan pemain Inter Miami.
-Jawaban: Lionel Messi dan Luis Suárez.
+```jsonl
+{"user":"Sebutkan pemain Inter Miami.","assistant":"Lionel Messi dan Luis Suárez."}
+{"user":"Siapa pemain Inter Miami?","assistant":"Lionel Messi dan Luis Suárez."}
+{"user":"Tampilkan pemain Inter Miami.","assistant":"Lionel Messi dan Luis Suárez."}
 ```
 
-model dapat mengulang dua nama itu ketika pertanyaan berubah, walaupun RAG
-memberikan daftar yang lebih panjang.
+Karena pasangan pertanyaan dan jawaban tersebut terus diulang, model dapat
+menghafal dua nama itu. Saat inference, model mungkin tetap menjawab:
+
+```text
+User: Siapa semua pemain Inter Miami yang ada di referensi?
+Jawaban model: Lionel Messi dan Luis Suárez.
+```
+
+Padahal RAG mungkin memberikan daftar 20 pemain. Ini menunjukkan model
+mengikuti pola dataset yang dihafalnya, bukan seluruh isi RAG.
 
 Karena itu, nama Inter Miami dan pemainnya tidak boleh mendominasi dataset style.
 Fakta tersebut lebih tepat disimpan di RAG atau dataset fakta, sedangkan dataset
@@ -178,4 +187,3 @@ RAG      → menyediakan fakta aktual
 Context  → membawa fakta ke model
 Inference→ merangkai jawaban
 ```
-

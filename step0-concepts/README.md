@@ -39,7 +39,7 @@ Urutan membaca dokumen ini:
 4. q_proj, k_proj, v_proj, dan o_proj
 5. MLP, residual, dan contextual vector akhir
 6. lm_head dan next token
-7. JSONL, training, koreksi bobot, akurasi, validation loss, lalu inference
+7. Format data training, target token, koreksi bobot, akurasi, validation loss, lalu inference
 ```
 
 ## 🟢 1. Token Menjadi Embedding
@@ -1017,6 +1017,93 @@ Target : "Jakarta."
 ```
 
 Role bukan bobot dan bukan jawaban yang langsung disimpan di dalam model. Role hanya membantu memberi struktur pada contoh percakapan. Yang melatih bobot adalah proses prediksi, perhitungan loss, dan pembaruan parameter.
+
+### Format data training lainnya
+
+Role `user` dan `assistant` hanya salah satu format. Beberapa format yang umum adalah:
+
+Teks biasa untuk pretraining:
+
+```jsonl
+{"text":"Saya terkena bisa ular."}
+```
+
+Pasangan prompt dan completion:
+
+```jsonl
+{"prompt":"Apa ibu kota Indonesia?","completion":"Jakarta."}
+```
+
+Format chat:
+
+```jsonl
+{"messages":[{"role":"user","content":"Apa ibu kota Indonesia?"},{"role":"assistant","content":"Jakarta."}]}
+```
+
+Ketiga format tersebut dapat digunakan untuk membentuk input dan target. Perbedaannya adalah struktur informasi yang diberikan kepada model:
+
+```text
+teks biasa
+→ model belajar kelanjutan teks
+
+prompt/completion
+→ model belajar melanjutkan prompt dengan completion
+
+user/assistant
+→ model belajar pola percakapan dan jawaban assistant
+```
+
+### Bagaimana target dibuat dan dibandingkan?
+
+Target biasanya dibuat otomatis dari urutan token dengan menggeser satu posisi ke kanan. Misalnya teks:
+
+```text
+Saya terkena bisa ular
+```
+
+Setelah tokenisasi, pasangan input dan targetnya dapat ditulis:
+
+```text
+Input : [Saya, terkena, bisa]
+Target: [terkena, bisa, ular]
+```
+
+Artinya model belajar beberapa prediksi sekaligus:
+
+```text
+Saya                 → terkena
+Saya terkena         → bisa
+Saya terkena bisa    → ular
+```
+
+Model menghasilkan probabilitas untuk setiap kandidat token melalui `lm_head`. Probabilitas tersebut dibandingkan dengan target token pada posisi yang sama:
+
+```text
+Target: ular
+
+Prediksi:
+ular     → 20%
+berenang → 70%
+mobil    → 10%
+
+→ probabilitas target rendah
+→ loss tinggi
+→ bobot dikoreksi saat training
+```
+
+Jika model memberi probabilitas tinggi kepada target:
+
+```text
+Target: ular
+
+ular     → 95%
+berenang → 3%
+mobil    → 2%
+
+→ loss rendah
+```
+
+Pada data chat, chat template mengubah role menjadi token. Biasanya token jawaban assistant dijadikan target utama, sedangkan token instruksi user berfungsi sebagai konteks. Dengan begitu model belajar bukan hanya isi jawaban, tetapi juga kapan harus menjawab dan mengikuti instruksi.
 
 Contoh pola lain:
 

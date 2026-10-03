@@ -335,6 +335,24 @@ Q dari token terakhir "bisa"
 → persentase relevansi setiap token
 ```
 
+Contoh perkalian sederhana untuk satu token:
+
+```text
+hidden_bisa = [0.5, 1.0]
+
+Wk =
+[
+  [1.0, 0.0],
+  [0.5, 0.5]
+]
+
+K_bisa = hidden_bisa × Wk
+        = [0.5, 1.0] × Wk
+        = [1.0, 0.5]
+```
+
+Token lain juga dihitung dengan `Wk` milik layer tersebut. Setelah semua `K` tersedia, `Q` token terakhir dibandingkan dengan setiap `K`.
+
 Head 1:
 
 ```text
@@ -448,6 +466,24 @@ hidden_terkena × Wv → V_terkena
 hidden_bisa    × Wv → V_bisa
 ```
 
+Contoh perkalian `v_proj`:
+
+```text
+hidden_bisa = [0.5, 1.0]
+
+Wv =
+[
+  [0.2, 0.0],
+  [0.0, 0.8]
+]
+
+V_bisa = hidden_bisa × Wv
+        = [0.5, 1.0] × Wv
+        = [0.1, 0.8]
+```
+
+Vector `[0.1, 0.8]` adalah Value yang dibawa token tersebut. Attention kemudian mengalikan Value ini dengan persentase relevansinya.
+
 Head 1:
 
 ```text
@@ -524,6 +560,27 @@ concat(
 )
 
 = [-0.40, 0.14, 0.24, 0.58]
+```
+
+Contoh perkalian `o_proj` yang disederhanakan:
+
+```text
+gabungan head = [a, b, c, d]
+
+Wo = identity matrix 4 × 4
+
+output attention
+= [a, b, c, d] × Wo
+= [a, b, c, d]
+```
+
+Pada model nyata, `Wo` bukan identity matrix. `Wo` mencampurkan semua koordinat hasil head dan mengembalikannya ke hidden size. Contoh angka berikut dibuat sederhana:
+
+```text
+gabungan head
+→ [ -0.40, 0.14, 0.24, 0.58 ]
+× Wo
+→ output attention
 ```
 
 Hasil gabungan mempunyai empat dimensi:

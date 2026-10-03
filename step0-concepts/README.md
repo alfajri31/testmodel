@@ -8,7 +8,7 @@ Dokumen ini menggunakan satu model mainan dengan empat dimensi dan dua head. Den
 
 Semua angka hanya ilustrasi agar perhitungannya mudah dilihat, bukan nilai asli dari model tertentu.
 
-Nilai bobot seperti `Wq`, `Wk`, `Wv`, `Wo`, `W_up`, dan `W_down` belum dijelaskan di awal agar alurnya tetap sederhana. Asal nilai bobot tersebut dibahas pada Section 6, setelah alur prediksi token selesai.
+Nilai bobot seperti `Wq`, `Wk`, `Wv`, `Wo`, `W_up`, dan `W_down` belum dijelaskan di awal agar alurnya tetap sederhana. Asal nilai bobot tersebut dibahas pada Bagian 6, setelah alur prediksi token selesai.
 
 ## 🟢 Gambaran Besar
 
@@ -156,11 +156,11 @@ Karena konteksnya berbeda, hasilnya juga dapat berbeda:
 → next token dapat berupa "ular"
 ```
 
-Section 2 hanya memberikan gambaran besar. Perhitungan Q, K, V, setiap head, dan O dijelaskan secara berurutan pada Section 3.
+Bagian 2 hanya memberikan gambaran besar. Perhitungan Q, K, V, setiap head, dan O dijelaskan secara berurutan pada Bagian 3.
 
 ## 🟢 3. Proses `q_proj`, `k_proj`, `v_proj`, dan `o_proj`
 
-Setiap projection menggunakan parameter yang sudah tersimpan di base model. Pada bagian Q, kita hanya memperlihatkan `Wq` untuk menjelaskan dari mana Q total berasal. Detail parameter projection lainnya dapat dipelajari setelah alur dasarnya dipahami.
+Setiap projection menggunakan matriks bobot yang sudah tersimpan di base model. Matriks tersebut dipakai berulang pada setiap input, tetapi nilainya tidak berubah saat inference. Nilai bobot dan proses pembelajarannya dibahas pada Bagian 6.
 
 Gunakan konfigurasi model mainan:
 
@@ -172,7 +172,37 @@ Dimensi setiap head = 2
 Total dimensi       = 4
 ```
 
-### 🟢 3.1 `q_proj`: membuat Query dari token terakhir
+### 🟢 3.1 Peta penggunaan bobot dalam satu layer
+
+Dalam satu Transformer layer, bobot dipakai pada bagian berikut:
+
+```text
+hidden vector
+→ q_proj memakai Wq → Q
+→ k_proj memakai Wk → K
+→ v_proj memakai Wv → V
+→ Q dan K menghasilkan relevansi
+→ relevansi mencampurkan V
+→ o_proj memakai Wo → output attention
+→ residual + MLP (W_gate, W_up, W_down)
+→ hidden vector baru untuk layer berikutnya
+```
+
+Pada Qwen3-0.6B, hidden size adalah `1.024`. Contoh bentuk matriksnya:
+
+```text
+Wq      [1.024 × 2.048]   → Q
+Wk      [1.024 × 1.024]   → K
+Wv      [1.024 × 1.024]   → V
+Wo      [2.048 × 1.024]   → kembali ke 1.024 angka
+W_gate  [1.024 × 3.072]   → ruang MLP
+W_up    [1.024 × 3.072]   → ruang MLP
+W_down  [3.072 × 1.024]   → kembali ke hidden size
+```
+
+Contoh hitungan di bagian berikut memakai empat dimensi agar mudah dihitung. Bentuk matriksnya disederhanakan, tetapi urutan prosesnya sama.
+
+### 🟢 3.2 `q_proj`: membuat Query dari token terakhir
 
 Untuk memprediksi token setelah prompt, Query yang menjadi fokus berasal dari posisi token terakhir `"bisa"`:
 
@@ -276,7 +306,7 @@ hidden_bisa dari embedding/layer sebelumnya
 → Head 2 [0.0, 1.0]
 ```
 
-### 🟢 3.2 `k_proj`: membuat Key untuk semua token
+### 🟢 3.3 `k_proj`: membuat Key untuk semua token
 
 Setiap token yang dapat dilihat menyediakan Key pada setiap head.
 
@@ -324,7 +354,7 @@ Bukan:
 Q_bisa Head 1 · K token Head 2 ❌
 ```
 
-### 🟢 3.3 Menghitung relevansi Head 1
+### 🟢 3.4 Menghitung relevansi Head 1
 
 ```text
 Q_bisa Head 1 = [1.0, 0.0]
@@ -357,7 +387,7 @@ bisa    → 14%
 
 Head 1 paling memperhatikan `"terkena"`.
 
-### 🟢 3.4 Menghitung relevansi Head 2
+### 🟢 3.5 Menghitung relevansi Head 2
 
 ```text
 Q_bisa Head 2 = [0.0, 1.0]
@@ -390,7 +420,7 @@ bisa    → sekitar 30.7%
 
 Head 2 paling memperhatikan `"Saya"`. Dengan demikian, dua head dapat menghasilkan pola relevansi berbeda untuk context window yang sama.
 
-### 🟢 3.5 `v_proj`: membuat Value lalu mencampurkan informasi
+### 🟢 3.6 `v_proj`: membuat Value lalu mencampurkan informasi
 
 Misalkan `v_proj` menghasilkan Value berikut. Angkanya adalah ilustrasi hasil projection, bukan vector yang dibuat acak saat inference.
 
@@ -461,7 +491,7 @@ v_proj menghasilkan V
 
 V tidak dibuat khusus untuk menghasilkan KV cache. KV cache hanya menyimpan hasil K dan V yang sudah dibuat.
 
-### 🟢 3.6 `o_proj`: menggabungkan semua head
+### 🟢 3.7 `o_proj`: menggabungkan semua head
 
 Output kedua head disambungkan, bukan dijumlahkan:
 
@@ -613,7 +643,7 @@ output layer terakhir → contextual vector akhir `h` → lm_head
 
 Contextual vector akhir belum berupa kata. `lm_head` membandingkan `h` dengan vector output seluruh token dalam vocabulary.
 
-Lanjutkan contoh yang sama dari Section 3:
+Lanjutkan contoh yang sama dari Bagian 3:
 
 ```text
 contextual vector akhir pada token "bisa"
@@ -794,7 +824,43 @@ Target : "ular"
 
 Jika prediksinya salah, proses training memperbaiki kemampuan model agar target yang benar mendapatkan probabilitas lebih tinggi. Detail parameter yang diperbarui belum dibahas pada pengantar ini.
 
-**Inference** adalah saat model menggunakan bobot hasil training untuk memproses input dan menghasilkan response. Jadi ketika user mengirim pertanyaan, model sedang melakukan inference. Pada tahap ini model tidak belajar dan bobotnya tidak berubah.
+### 🟢 Training vs inference
+
+Training dan inference sama-sama melakukan prediksi token, tetapi tujuannya berbeda.
+
+Saat training, dataset menyediakan input dan target. Model membuat prediksi, membandingkannya dengan target untuk menghitung loss, lalu optimizer memperbarui bobot.
+
+```text
+input training
+→ prediksi token
+→ bandingkan dengan target
+→ hitung loss
+→ perbarui bobot
+```
+
+Inference adalah saat model menggunakan bobot hasil training untuk memproses input dan menghasilkan response. Jadi ketika user mengirim pertanyaan, model sedang melakukan inference. Prediksi tetap dilakukan satu token demi satu token, tetapi tidak ada target training, loss untuk belajar, atau pembaruan bobot.
+
+```text
+input user
+→ prediksi next token
+→ token masuk ke context window
+→ prediksi next token berikutnya
+→ ulangi sampai response selesai
+```
+
+Contoh inference:
+
+```text
+Input: “Ibu kota Indonesia adalah”
+→ prediksi: “Jakarta”
+```
+
+Ringkasnya:
+
+```text
+Training  → prediksi + loss + pembaruan bobot
+Inference → prediksi saja + bobot tetap
+```
 
 ### 🟢 Context window: ingatan kerja sementara
 
@@ -840,48 +906,6 @@ hidden vector saat ini
 ```
 
 Yang berubah mengikuti prompt adalah Q, K, V, bobot relevansi attention, dan contextual vector—bukan bobot modelnya.
-
-## 🟢 Training vs Inference
-
-Training dan inference sama-sama melakukan prediksi token, tetapi tujuannya berbeda.
-
-### 🟢 Saat training
-
-Dataset menyediakan input dan target jawaban. Model membuat prediksi, lalu prediksi tersebut dibandingkan dengan target untuk menghitung loss. Hasil loss dipakai untuk memperbarui bobot.
-
-```text
-input training
-→ prediksi token
-→ bandingkan dengan target
-→ hitung loss
-→ perbarui bobot
-```
-
-### 🟢 Saat inference
-
-Inference terjadi ketika model memakai bobot hasil training untuk menjawab input user. Prediksi tetap dilakukan satu token demi satu token, tetapi tidak ada target training, tidak ada perhitungan loss untuk belajar, dan bobot tidak diperbarui.
-
-```text
-input user
-→ prediksi next token
-→ token masuk ke context window
-→ prediksi next token berikutnya
-→ ulangi sampai response selesai
-```
-
-Contoh:
-
-```text
-Input: “Ibu kota Indonesia adalah”
-→ prediksi: “Jakarta”
-```
-
-Ringkasnya:
-
-```text
-Training  → prediksi + loss + pembaruan bobot
-Inference → prediksi saja + bobot tetap
-```
 
 ## 🟢 Kesimpulan
 

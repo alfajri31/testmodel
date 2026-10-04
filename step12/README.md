@@ -40,6 +40,16 @@ W1 = 0.5
 W2 = 0.5
 ```
 
+Kedua angka tersebut dapat ditulis sebagai satu vector bobot:
+
+```text
+W = [W1, W2]
+W = [0.5, 0.5]
+```
+
+`W1` dipasangkan dengan angka pertama, sedangkan `W2` dipasangkan dengan
+angka kedua.
+
 Rumus model:
 
 ```text
@@ -82,30 +92,49 @@ Semakin besar perbedaan prediksi dan target, semakin besar loss.
 
 ## 🟢 Gradient
 
-Gradient menunjukkan arah dan besar perubahan bobot yang diperlukan.
+Gradient menunjukkan bagaimana loss berubah ketika sebuah bobot digeser.
+Kita lihat langsung melalui angka. Kedua input bernilai `1`, targetnya `2`,
+dan `W2` tetap `0.5`. Jadi `prediksi = W1 + W2`.
 
-Untuk model sederhana:
+Pegang `W2 = 0.5`, lalu coba tiga nilai `W1`:
 
-```text
-gradient_W1 = (prediksi - target) × input_1
-gradient_W2 = (prediksi - target) × input_2
-```
+| W1 | Prediksi (`W1 + W2`) | Loss `½ × (prediksi − 2)²` |
+|---:|---:|---:|
+| 0.49 | 0.99 | 0.51005 |
+| 0.50 | 1.00 | 0.50000 |
+| 0.51 | 1.01 | 0.49005 |
 
-Perhitungannya:
-
-```text
-gradient_W1 = (1 - 2) × 1 = -1
-gradient_W2 = (1 - 2) × 1 = -1
-```
-
-Jadi:
+Contoh perhitungan loss pada baris pertama dan terakhir:
 
 ```text
-gradient = [-1, -1]
+W1 = 0.49 → loss = ½ × (0.99 − 2)² = 0.51005
+W1 = 0.51 → loss = ½ × (1.01 − 2)² = 0.49005
 ```
 
-Gradient bukan bobot baru. Gradient hanya memberi petunjuk bagaimana bobot
-harus diubah.
+Saat `W1` naik dari `0.49` ke `0.51`, loss turun. Besar kemiringan loss di
+sekitar `W1 = 0.50`:
+
+```text
+perubahan loss / perubahan W1
+= (0.49005 − 0.51005) / (0.51 − 0.49)
+= −0.02 / 0.02
+= −1
+```
+
+Itulah **gradient untuk W1** di titik `W1 = 0.5`. Tanda negatif berarti
+menaikkan `W1` akan menurunkan loss. Angka loss pada titik itu tetap `0.5`;
+loss dan gradient memang mengukur hal yang berbeda.
+
+Jika giliran `W2` digeser sambil `W1` ditahan di `0.5`, perhitungannya sama
+karena kedua input bernilai `1`. Maka:
+
+```text
+gradient = [gradient_W1, gradient_W2] = [−1, −1]
+```
+
+Cara mencoba pergeseran seperti ini membantu kita melihat arti gradient.
+Pada model nyata, gradient dihitung dengan backpropagation tanpa mencoba
+setiap bobot satu per satu.
 
 ## 🟢 Learning rate
 
@@ -236,4 +265,3 @@ bobot awal
 → bobot diperbaiki
 → prediksi semakin baik
 ```
-

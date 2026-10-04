@@ -1,7 +1,8 @@
 # 🟢 Step 12 — Cara Kerja Neural Network
 
 Step ini menjelaskan bagaimana neural network memperbaiki bobot melalui
-prediksi, loss, gradient, dan learning rate.
+prediksi, loss, gradient, dan learning rate. Kita juga melihat validation loss
+untuk memeriksa hasil pada contoh yang tidak dipakai memperbarui bobot.
 
 ## 🟢 Gambaran sederhana
 
@@ -69,11 +70,20 @@ Target yang benar adalah:
 target = 2
 ```
 
-Model masih salah karena prediksi `1`, sedangkan targetnya `2`.
+## 🟢 Prediksi
+
+Prediksi adalah **hasil yang diberikan model dengan bobotnya saat ini**. Pada
+contoh di atas, input `1 + 1` menghasilkan prediksi `1`. Target dari data
+training adalah `2`, sehingga prediksi itu belum tepat.
+
+Dalam contoh ini prediksi berupa angka hasil rumus sederhana. Pada LLM,
+prediksi berikutnya berupa skor untuk kandidat token, misalnya token `"2"`
+setelah teks `"1 + 1 ="`.
 
 ## 🟢 Loss
 
-Loss mengukur seberapa jauh prediksi dari target.
+Loss mengukur seberapa jauh prediksi dari target. Jika dihitung pada contoh
+training, nilainya disebut **training loss**.
 
 Rumus sederhana:
 
@@ -89,6 +99,30 @@ loss = ½ × (1 - 2)²
 ```
 
 Semakin besar perbedaan prediksi dan target, semakin besar loss.
+
+## 🟢 Validation loss
+
+Validation loss dihitung dengan rumus loss yang sama, tetapi memakai **data
+validasi**, yaitu contoh yang tidak dipakai untuk memperbarui bobot. Tujuannya
+melihat apakah model juga bekerja pada input lain, bukan hanya pada contoh
+training.
+
+Misalnya data validasi berisi `5 + 5` dengan target `10`. Dengan bobot awal
+`W = [0.5, 0.5]`:
+
+```text
+prediksi validasi = (5 × 0.5) + (5 × 0.5) = 5
+validation loss   = ½ × (5 − 10)² = 12.5
+```
+
+Angka `12.5` dapat dibandingkan dengan validation loss setelah beberapa
+update training. **Perhitungan validasi tidak mengubah bobot**: tidak ada
+langkah update dari contoh `5 + 5` ini. Dalam latihan kecil ini, model tetap
+belajar dari data training, lalu diuji pada data validasi.
+
+Training loss yang turun menunjukkan model makin cocok dengan contoh latihan.
+Jika training loss turun tetapi validation loss tetap tinggi atau naik, model
+mungkin terlalu mengikuti data latihan dan kurang mampu menangani contoh baru.
 
 ## 🟢 Gradient
 
@@ -246,12 +280,13 @@ bobot Transformer.
 ## 🟢 Ringkasan
 
 ```text
-Bobot       → kemampuan yang dipelajari model
-Prediksi    → tebakan model
-Target      → jawaban yang diharapkan
-Loss        → ukuran kesalahan
-Gradient    → arah perubahan bobot
-Learning rate → ukuran langkah perubahan
+Bobot           → angka yang dipelajari model
+Prediksi        → hasil dari input dan bobot saat ini
+Target          → jawaban yang diharapkan
+Training loss   → kesalahan pada contoh yang dipakai belajar
+Validation loss → kesalahan pada contoh terpisah untuk memeriksa hasil
+Gradient        → arah dan kemiringan perubahan loss terhadap bobot
+Learning rate   → ukuran langkah perubahan bobot
 ```
 
 Kesimpulannya:

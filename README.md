@@ -82,6 +82,12 @@ Memahami bagaimana query user diubah menjadi embedding, dokumen RAG dipilih, nat
 
 [Baca Step 11](step11/README.md)
 
+### 🟢 Step 12 — Neural Network
+
+Placeholder untuk pembelajaran cara kerja neural network.
+
+[Baca Step 12](step12/README.md)
+
 ## 🟢 Alur Singkat
 
 ```text

@@ -72,6 +72,41 @@ hf buckets sync SUMBER TUJUAN
 
 Jika download terputus, jalankan kembali perintah yang sama. CLI akan membandingkan sumber dan tujuan, kemudian melanjutkan file yang masih diperlukan.
 
+### Jika `hf buckets sync` tidak jalan
+
+Periksa dahulu Python dan Hugging Face CLI yang terbaca oleh terminal:
+
+```bash
+python3 --version
+which python3
+which hf
+hf version
+hf buckets --help
+```
+
+Jika `python3` masih mengarah ke Python lama, pada Mac dengan Apple Silicon kita bisa memasang Python 3.12 dan menaruhnya di depan `PATH`:
+
+```bash
+brew install python@3.12
+echo 'export PATH="/opt/homebrew/opt/python@3.12/libexec/bin:$HOME/.local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+python3 --version
+```
+
+Pastikan hasilnya `Python 3.12.x`. Tambahkan baris `export PATH` tersebut **sekali saja** ke `~/.zshrc` agar tidak berulang setiap kali mencoba langkah ini. Path `/opt/homebrew` di atas khusus instalasi Homebrew standar pada Mac Apple Silicon.
+
+Jika perintah `hf` tidak ditemukan atau subperintah `buckets` belum tersedia, pasang CLI melalui installer resminya:
+
+```bash
+curl -LsSf https://hf.co/cli/install.sh | bash
+source ~/.zshrc
+which hf
+hf version
+hf buckets --help
+```
+
+Installer CLI ini tidak bergantung pada Python 3.12 yang dipakai untuk menjalankan script model. Jadi, jika `python3` sudah sesuai, tidak perlu memasang ulang Python hanya karena `hf buckets sync` gagal. Jika `hf buckets --help` sudah tampil tetapi sinkronisasi tetap gagal, periksa login dengan `hf auth whoami`, lalu lihat pesan error sinkronisasinya; penyebabnya bisa izin bucket, nama bucket, atau koneksi jaringan.
+
 ## 5. Periksa model hasil sinkronisasi
 
 ```bash

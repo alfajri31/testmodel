@@ -46,9 +46,9 @@ Menggabungkan adapter LoRA dengan base model dan memahami token, layer, tensor, 
 
 [Baca Step 5](step5/README.md)
 
-### 🟢 Step 6 — Menjalankan Model di Ollama
+### 🟢 Step 6 — Format dan Deploy Model
 
-Menjalankan Safetensors secara langsung atau mengonversinya menjadi GGUF untuk Ollama dan `llama.cpp`.
+Mengenal format Safetensors dan GGUF, lalu men-deploy model ke Ollama untuk dijalankan.
 
 [Baca Step 6](step6/README.md)
 

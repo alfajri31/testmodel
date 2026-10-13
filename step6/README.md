@@ -1,6 +1,6 @@
-# 🟢 Step 6 — Deploy Model ke Ollama
+# 🟢 Step 6 — Format dan Deploy Model
 
-Pada step ini, merged model dari Step 5 dijalankan di Ollama melalui dua jalur:
+Pada step ini, kita mempelajari **format model** (Safetensors dan GGUF), lalu **deploy model** agar merged model dari Step 5 dapat dijalankan di Ollama. Ada dua jalur:
 
 ```text
 Base Model + LoRA
@@ -15,6 +15,8 @@ Model sumber:
 ```text
 /Users/fajri/Projects/testmodel/step5/merged_model
 ```
+
+**Format** adalah bentuk file model yang dibaca oleh runtime. Di sini, Safetensors dapat diimpor langsung ke Ollama, sedangkan GGUF dihasilkan lewat konversi untuk runtime seperti `llama.cpp` dan Ollama. **Deploy** berarti mendaftarkan model dengan `ollama create`, lalu menjalankannya dengan `ollama run`. Mengubah format atau men-deploy model tidak melatih ulang bobotnya.
 
 ## 🟢 Dua versi model
 
